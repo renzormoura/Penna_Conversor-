@@ -12,7 +12,7 @@
 
 ---
 
-## 🎯 Objetivo
+##  Objetivo
 
 O programa antigo APAC-MAG recebia planilhas de apacs oftalmológicas e gerava
 o arquivo TXT enviado ao DATASUS, mas era uma ferramenta envelhecida, sem
@@ -32,7 +32,7 @@ o DATASUS espera.**
 
 ---
 
-## ✨ O que ele faz
+##  O que ele faz
 
 | Recurso | Descrição |
 |---|---|
@@ -48,7 +48,7 @@ o DATASUS espera.**
 
 ---
 
-## 📦 Pré-requisitos e instalação
+##  Pré-requisitos e instalação
 
 **Para usar (cliente final):**
 
@@ -82,7 +82,7 @@ build_exe.bat         # apenas dist\PennaConversor.exe
 
 ---
 
-## 📖 Passo a passo — como usar
+##  Passo a passo — como usar
 
 1. **Abra o programa** e arraste a planilha Excel para a janela
    (ou clique em *Selecionar* e procure o arquivo);
@@ -102,7 +102,7 @@ build_exe.bat         # apenas dist\PennaConversor.exe
 
 ---
 
-## 🧩 Como funciona por dentro
+##  Como funciona por dentro
 
 Fluxo completo, do Excel ao arquivo fiscal:
 
@@ -148,7 +148,7 @@ Decisões de arquitetura que valem conhecer:
 
 ---
 
-## ⚙️ Configuração do estabelecimento
+##  Configuração do estabelecimento
 
 O arquivo `penna_config.json` define o **header fiscal** e os valores padrão
 da planilha. Ele **não é versionado no Git** (é dado privado do
@@ -182,7 +182,7 @@ usa os valores de fábrica e emite um aviso.
 
 ---
 
-## 📋 Colunas esperadas na planilha
+##  Colunas esperadas na planilha
 
 O conversor lê as colunas canônicas do APAC-MAG (**nomes exatos**, em
 português) — contrato do gerador (`COLUNAS_PLANILHA` em
@@ -213,7 +213,7 @@ data de nascimento, raça, logradouro, CEP etc.).
 
 ---
 
-## 🛡️ Regras de consistência e bases SIGTAP
+##  Regras de consistência e bases SIGTAP
 
 O validador **bloqueia** (ERR) enquanto houver: APAC inválida/duplicada no
 histórico, data de nascimento inválida, CEP inexistente, raça ou logradouro
@@ -239,7 +239,7 @@ S_PAREGR, S_CID, S_DEPARA, XUPSHA), são **versionadas no repositório** e
 
 ---
 
-## 🗂️ Estrutura do projeto
+##  Estrutura do projeto
 
 ```
 PENNA_CONVERSOR/
@@ -268,7 +268,7 @@ PENNA_CONVERSOR/
 
 ---
 
-## 🧪 Testes
+##  Testes
 
 ```bash
 python -m unittest discover -s tests
@@ -280,7 +280,7 @@ fichas, interface e o fluxo completo Excel → TXT/PDF. Os testes usam apenas
 
 ---
 
-## 🔒 Privacidade
+##  Privacidade
 
 Este repositório é **puro**: não há dados reais de pacientes, CPFs, nomes ou
 configuração do estabelecimento. O que é privado fica fora do Git (ver
@@ -294,7 +294,7 @@ configuração do estabelecimento. O que é privado fica fora do Git (ver
 
 ---
 
-## 🆘 Solução de problemas
+##  Solução de problemas
 
 | Sintoma | O que fazer |
 |---|---|
