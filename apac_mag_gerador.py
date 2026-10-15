@@ -407,6 +407,11 @@ def _calcular_checksum(linhas: List[str]) -> str:
     return str(total % 1111 + 1111)
 
 
+def _data_geracao() -> str:
+    """Data de geracao (AAAAMMDD) gravada no header; isolada para os testes."""
+    return pd.Timestamp.today().strftime("%Y%m%d")
+
+
 def _montar_header(linhas: List[str]) -> str:
     """Header '01#APAC...' com 134 chars, idêntico ao programa antigo.
 
@@ -419,7 +424,7 @@ def _montar_header(linhas: List[str]) -> str:
     h = get_header()
     qtde_apacs = sum(1 for linha in linhas if linha.startswith("14"))
     competencia = _competencia_header(linhas)
-    dt_geracao = pd.Timestamp.today().strftime("%Y%m%d")
+    dt_geracao = _data_geracao()
     versao = pad_right(get_versao(competencia), 12)
     return (
         "01"
