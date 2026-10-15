@@ -88,11 +88,13 @@ CATALOGO_CODIGOS: Dict[str, str] = {
     "010042": "DATA DE SOLICITACAO (dd/mm/aaaa) ANTERIOR A DATA DE NASCIMENTO(dd/mm/aaaa)",
     "010083": "DATA DE ENCERRAMENTO (dd/mm/aaaa) MAIOR QUE DATA DE FIM (dd/mm/aaaa)",
     "010090": "<CAMPO>: DATA INVALIDA (valor)  [regra local do Penna]",
+    "010091": "<CAMPO>: CARACTERE NAO SUPORTADO NO TXT (cp1252/controle)  [regra local do Penna]",
     # 000005 e estrutural (planilha vazia, competencia invalida/mista): sem
     # competencia nao ha arquivo valido, entao bloqueia mesmo sem amostra oficial.
     "000005": "COMPETENCIA / NUMERO APAC invalidos para exportacao (estrutural, sem amostra oficial)",
     # ---- AVS (avisos; o antigo exporta mesmo com eles) ----
     "010084": "NUMERO APAC: ENCONTRADO NO HISTORICO DE APAC DO SITE",
+    "010092": "<CAMPO>: TEXTO MAIOR QUE A LARGURA DO LAYOUT, SERA TRUNCADO  [regra local do Penna]",
     "030001": "CNES EXECUTANTE(nnnnnnn) NAO ENCONTRADO",
     "030008": "PROCED.(...) EXIGE HABILITACAO NAO ENCONTRADA NO CNES(nnnnnnn)",
     "030009": "REGRA CONDICIONADA 0009 : PROCEDIMENTO PRINCIPAL IMPEDE VALOR NOS SECUNDARIOS (AVS do R0201)",
@@ -114,7 +116,7 @@ SEVERIDADE_HIPOTESE = "AVS"
 
 _CODIGOS_HIPOTESE = ("000006", "000007", "000008", "000009", "010040", "010041")
 _CODIGOS_ERR = ("000005", "000016", "000024", "010022", "010025", "010027", "010032",
-                "010042", "010083", "010090")
+                "010042", "010083", "010090", "010091")
 
 # Severidade de cada codigo (fonte unica para docs/relatorios e testes).
 SEVERIDADE_PADRAO: Dict[str, str] = {
@@ -331,6 +333,32 @@ _CAMPOS_DATA_TXT = ("Inicio_Validade", "Fim_Validade", "Data_Solicitacao",
                     "Data_Autorizacao", "Data_Alta_Obito", "Data_Emissao")
 
 
+# Campos de texto do TXT com largura fixa (campo da planilha -> largura do layout).
+# Acima disso o gerador trunca em silencio (pad_right); aqui vira aviso.
+_LARGURA_TEXTO_TXT = {
+    "Nome_Paciente": 30, "Nome_Da_Mae": 30, "Nome_Do_Responsavel": 30, "Rua": 30,
+    "Numero_Endereco": 5, "Complemento": 10, "Bairro": 30, "Email": 40,
+    "Nome_Profissional": 30, "Autorizador_Nome": 30, "Cid_Causas_Assoc": 4,
+    "No_Prontuario": 10, "Cod_Orgao_Emiss": 10, "INE": 10, "Etnia": 4,
+}
+
+
+def _caractere_invalido_no_txt(valor: str) -> str:
+    """Primeiro caractere que o TXT cp1252 nao suporta ('' se nenhum).
+
+    Controle (quebra de linha/tab) desmonta o layout fixo; fora do cp1252 o
+    gerador antigo gravava '?' no lugar, corrompendo o dado fiscal.
+    """
+    for ch in valor:
+        if ord(ch) < 32 or ord(ch) == 127:
+            return repr(ch)
+        try:
+            ch.encode("cp1252")
+        except UnicodeEncodeError:
+            return ch
+    return ""
+
+
 def _data_real(aaaammdd: str) -> bool:
     if len(aaaammdd) != 8 or not aaaammdd.isdigit():
         return False
@@ -455,6 +483,20 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
         if bruto and not _parse_data(bruto):
             coletor.adicionar(cmpt, num_apac, "ERR", "CORPO", "010090",
                               f"{campo.upper()}: DATA INVALIDA ({bruto})")
+
+    # --- TEXTOS DO TXT: caractere nao suportado (ERR 010091) e largura (AVS 010092) ---
+    for campo, largura in _LARGURA_TEXTO_TXT.items():
+        valor = resolve_row_value(row, campo)
+        if not valor:
+            continue
+        ruim = _caractere_invalido_no_txt(valor)
+        if ruim:
+            coletor.adicionar(cmpt, num_apac, "ERR", "CORPO", "010091",
+                              f"{campo.upper()}: CARACTERE NAO SUPORTADO NO TXT ({ruim})")
+        if len(valor) > largura:
+            coletor.adicionar(cmpt, num_apac, "AVS", "CORPO", "010092",
+                              f"{campo.upper()}: TEXTO COM {len(valor)} CARACTERES, "
+                              f"MAXIMO {largura} (SERA TRUNCADO)")
 
     # --- CEP (ERR 010022; base S_CEP.DBF do antigo) ---
     if ctx.get("base_ceps") is not None:
