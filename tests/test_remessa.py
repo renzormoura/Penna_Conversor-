@@ -176,3 +176,25 @@ class TestDemonstrativo(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRemessaUtf8EHistorico(unittest.TestCase):
+    def test_remessa_json_e_utf8(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td) / "remessas"
+            txt = Path(td) / "ação_ÇÃO.JUN"
+            txt.write_bytes(b"x")
+            registro = rem.registrar_remessa(txt, _DF([linha_base()]), pasta_base=base)
+            bruto = (Path(registro["pasta"]) / "remessa.json").read_bytes()
+            dados = json.loads(bruto.decode("utf-8"))  # nao pode ser cp1252
+            self.assertEqual(dados["arquivo"], "ação_ÇÃO.JUN")
+
+    def test_historico_le_os_dois_layouts_de_pasta(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            (base / "202605").mkdir()
+            (base / "202605" / "apacs.txt").write_text("3326703612353\n", encoding="cp1252")
+            (base / "202606" / "20260701_101010").mkdir(parents=True)
+            (base / "202606" / "20260701_101010" / "apacs.txt").write_text(
+                "3326703612397\n3326703612353\n", encoding="cp1252")
+            self.assertEqual(rem.apacs_exportadas(base), {"3326703612353", "3326703612397"})

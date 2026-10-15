@@ -550,7 +550,6 @@ def exportar_txt(df: pd.DataFrame, caminho_saida: Path) -> pd.DataFrame:
 
     texto = "".join(linha + "\r\n" for linha in linhas) + "\r\n"
     caminho_saida.write_bytes(texto.encode("cp1252", errors="replace"))
-    _salvar_numeracao_usada(df)
     return df
 
 
@@ -558,20 +557,6 @@ def exportar_txt_com_numeracao(df: pd.DataFrame, caminho_saida: Path) -> pd.Data
     """Exporta o TXT e devolve o DataFrame (retrocompatibilidade)."""
     exportar_txt(df, caminho_saida)
     return df
-
-
-def _salvar_numeracao_usada(df: pd.DataFrame, caminho: Optional[Path] = None) -> None:
-    """Grava a numeração usada em CSV de acompanhamento (pasta Formatado)."""
-    try:
-        destino = caminho or (Path(__file__).resolve().parent / OUTPUT_FOLDER_NAME / "numeracao_apac_usada.csv")
-        destino.parent.mkdir(exist_ok=True, parents=True)
-        colunas = [c for c in ("Numero_Apac", "Nome_Paciente", "Cpf_Paciente", "Cod_Procedimento") if c in df.columns]
-        if not colunas or df.empty:
-            return
-        df[colunas].copy().to_csv(destino, index=False, encoding="utf-8-sig", sep=";")
-    except (OSError, ValueError, KeyError):
-        # Registro de numeração é de acompanhamento: nunca interrompe a exportação.
-        pass
 
 
 def localizar_planilha(base_dir: Path) -> Path:

@@ -88,23 +88,10 @@ class TestExportacaoComOpcoes(unittest.TestCase):
         cls._argv = list(sys.argv)
         sys.argv = sys.argv[:1]
         cls.app = PennaApp(cls.root)
-        # A exportação grava a numeração usada no CSV de acompanhamento:
-        # o teste restaura o arquivo ao final para não alterar o repositório.
-        cls._numeracao = Path(__file__).resolve().parent.parent / "Formatado" / "numeracao_apac_usada.csv"
-        cls._numeracao_bytes = (cls._numeracao.read_bytes()
-                                if cls._numeracao.exists() else None)
 
     @classmethod
     def tearDownClass(cls):
         sys.argv = cls._argv
-        try:
-            if cls._numeracao_bytes is None:
-                if cls._numeracao.exists():
-                    cls._numeracao.unlink()
-            else:
-                cls._numeracao.write_bytes(cls._numeracao_bytes)
-        except Exception:
-            pass
         try:
             cls.root.destroy()
         except Exception:

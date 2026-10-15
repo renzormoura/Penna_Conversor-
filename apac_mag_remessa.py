@@ -254,7 +254,7 @@ def registrar_remessa(
         "origem": "Penna",
     }
     (pasta / "remessa.json").write_text(
-        json.dumps(registro, ensure_ascii=False, indent=2), encoding="cp1252"
+        json.dumps(registro, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return registro
 
@@ -268,22 +268,18 @@ def apacs_exportadas(pasta_base: Optional[Path] = None) -> Set[str]:
     numeros: Set[str] = set()
     if not base.exists():
         return numeros
-    for apacs in base.glob("*/apacs.txt"):
-        try:
-            for linha in apacs.read_text(encoding="cp1252", errors="replace").splitlines():
+    # Dois layouts de pasta: <base>/<pasta>/apacs.txt (antigo) e
+    # <base>/<competencia>/<carimbo>/apacs.txt (atual).
+    for padrao in ("*/apacs.txt", "*/*/apacs.txt"):
+        for apacs in base.glob(padrao):
+            try:
+                linhas = apacs.read_text(encoding="cp1252", errors="replace").splitlines()
+            except OSError:
+                continue  # arquivo ilegível: as demais remessas continuam contando
+            for linha in linhas:
                 numero = _digitos(linha)
                 if numero:
                     numeros.add(numero.zfill(13)[:13])
-        except OSError:
-            continue  # arquivo ilegível: as demais remessas continuam contando
-    for apacs in base.glob("*/*/apacs.txt"):
-        try:
-            for linha in apacs.read_text(encoding="cp1252", errors="replace").splitlines():
-                numero = _digitos(linha)
-                if numero:
-                    numeros.add(numero.zfill(13)[:13])
-        except OSError:
-            continue
     return numeros
 
 
