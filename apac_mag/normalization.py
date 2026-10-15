@@ -89,24 +89,46 @@ def normalize_code(value: Any, width: int) -> str:
     return raw.zfill(width) if raw else ""
 
 
-def normalize_date(value: Any) -> str:
-    """Normaliza data para AAAAMMDD (formato interno do layout).
+def _data_real(aaaammdd: str) -> bool:
+    try:
+        date(int(aaaammdd[:4]), int(aaaammdd[4:6]), int(aaaammdd[6:8]))
+        return True
+    except ValueError:
+        return False
 
-    Aceita:
+
+def normalize_date(value: Any) -> str:
+    """Normaliza data para AAAAMMDD (formato do layout). Vazio se invalida.
+
+    Fonte unica para gerador, validador e leitura da planilha. Aceita:
     - datetime / date nativo
-    - DDMMAAAA  (planilha: '24011958' = 24/01/1958)
-    - AAAAMMDD  (já no formato correto)
-    - 6 dígitos (AAAAMM → adiciona '01')
+    - ISO, com ou sem hora ('2026-06-15', '2026-06-15 00:00:00', '...T10:30')
+    - DD/MM/AAAA (separadores '/', '-' ou '.')
+    - DDMMAAAA ('24011958') e AAAAMMDD ('19580124'), 8 digitos
+    - AAAAMM (6 digitos): assume dia 01
+    Datas que nao existem no calendario (31/02) devolvem ''.
     """
     if isinstance(value, (datetime, date)):
         return value.strftime("%Y%m%d")
-    raw = digits(value)
+    raw_text = text(value)
+    m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T].*)?$", raw_text)
+    if m:
+        candidato = f"{m.group(1)}{int(m.group(2)):02d}{int(m.group(3)):02d}"
+        return candidato if _data_real(candidato) else ""
+    m = re.match(r"^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$", raw_text)
+    if m:
+        candidato = f"{m.group(3)}{int(m.group(2)):02d}{int(m.group(1)):02d}"
+        return candidato if _data_real(candidato) else ""
+    raw = digits(raw_text)
     if len(raw) == 8:
-        dia, mes, ano = raw[:2], raw[2:4], raw[4:]
-        if ano[:2] in ("18", "19", "20", "21") and 1 <= int(dia) <= 31 and 1 <= int(mes) <= 12:
-            return ano + mes + dia
-        return raw
-    if len(raw) == 6:
+        # AAAAMMDD primeiro (layout); senao DDMMAAAA.
+        if raw[:2] in ("19", "20") and _data_real(raw):
+            return raw
+        ddmm = raw[4:] + raw[2:4] + raw[:2]
+        if ddmm[:2] in ("18", "19", "20", "21") and _data_real(ddmm):
+            return ddmm
+        return ""
+    if len(raw) == 6 and raw[:2] in ("19", "20") and 1 <= int(raw[4:]) <= 12:
         return raw + "01"
     return ""
 
@@ -158,24 +180,19 @@ def nascimento_to_aaaammdd(value: Any) -> str:
     """
     raw = digits(value)
     if len(raw) != 8:
-        return date_to_ddmmaa(value)
+        return date_to_txt(value)
     dia, mes, ano = raw[:2], raw[2:4], raw[4:]
     if ano[:2] in ("18", "19", "20", "21") and 1 <= int(dia) <= 31 and 1 <= int(mes) <= 12:
         return ano + mes + dia
     return raw
 
 
-def date_to_ddmmaa(value: Any) -> str:
-    """Normaliza datas para AAAAMMDD (formato usado no layout oficial).
+def date_to_txt(value: Any) -> str:
+    """Data para campo AAAAMMDD do TXT; '00000000' se vazia ou invalida.
 
-    Aceita separadores variados; devolve '00000000' para valor vazio/inválido.
+    A invalida e barrada antes pelo validador; este e so o ultimo recurso.
     """
-    raw = re.sub(r"\D", "", text(value))
-    if not raw:
-        return "00000000"
-    if len(raw) >= 8:
-        return raw[:8]
-    return raw.ljust(8, "0")[:8]
+    return normalize_date(value) or "00000000"
 
 
 # ==============================================================================

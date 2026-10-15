@@ -19,7 +19,7 @@ import re
 from .config import get_defaults
 from .models import ApacRecord, ProcedureRecord
 from .normalization import (
-    date_to_ddmmaa,
+    date_to_txt,
     digits,
     normalize_competence,
     pad_left,
@@ -104,9 +104,9 @@ def _block_01(record: ApacRecord) -> str:
     cnes = pad_left(record.executing_cnes or dfl["Cnes_Executante"], 7, "0")
 
     # Data de processamento: no antigo é o 1º dia da competência
-    data_emissao = date_to_ddmmaa(record.authorization_date or record.request_date or (competencia + "01"))
-    inicio = date_to_ddmmaa(record.validity_start)
-    fim = date_to_ddmmaa(record.validity_end)
+    data_emissao = date_to_txt(record.authorization_date or record.request_date or (competencia + "01"))
+    inicio = date_to_txt(record.validity_start)
+    fim = date_to_txt(record.validity_end)
     tipo_atendimento = pad_left(record.attendance_type or "00", 2, "0")
     tipo = pad_left(record.apac_type or dfl["Tipo_Apac"], 1, "0")
     nome_paciente = pad_right(_upper(patient.name), 30)
@@ -116,13 +116,13 @@ def _block_01(record: ApacRecord) -> str:
     complemento = pad_right(patient.complement, 10)
     cep = pad_left(patient.cep, 8, "0")
     ibge = _ibge_code(patient.municipality_code, dfl.get("Codigo_Municipio", ""))
-    data_nasc = date_to_ddmmaa(patient.birth_date)
+    data_nasc = date_to_txt(patient.birth_date)
     # Sexo: espaço quando ausente para não deslocar os campos seguintes
     sexo = _upper(patient.sex)[:1] or " "
     nome_solicitante = pad_right(_upper(record.professional_name or record.requester_name), 30)
     codigo_proc = pad_left(record.procedures[0].code if record.procedures else "", 10, "0")
     codigo_cob = pad_left(record.exit_reason or dfl["Motivo_Saida"], 2, "0")
-    data_correcao = date_to_ddmmaa(record.discharge_date)
+    data_correcao = date_to_txt(record.discharge_date)
     nome_diretor = pad_right(_upper(record.authorizer_name), 30)
     # CNS: paciente=brancos quando ausente; profissional/diretor=zeros quando ausente
     cns_paciente = _cns_patient_field(patient.cns)
@@ -131,8 +131,8 @@ def _block_01(record: ApacRecord) -> str:
     cid_causa = pad_right(_upper(record.associated_cid), 4)
     prontuario = pad_right(record.consultation_number, 10)
     cnes_solicitante = pad_left(record.requesting_cnes or cnes, 7, "0")
-    data_solic = date_to_ddmmaa(record.request_date)
-    data_aut = date_to_ddmmaa(record.authorization_date)
+    data_solic = date_to_txt(record.request_date)
+    data_aut = date_to_txt(record.authorization_date)
     codigo_orgao = pad_right(record.authorization_code or dfl["Cod_Orgao_Emiss"], 10)
     carater = pad_left(record.attendance_character or dfl["Carater_Atend"], 2, "0")
     apac_anterior = pad_left(
