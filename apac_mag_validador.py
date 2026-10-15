@@ -87,23 +87,53 @@ CATALOGO_CODIGOS: Dict[str, str] = {
     "010027": "RACA (nn) INVALIDA",
     "010032": "LOGRADOURO (nnn) INVALIDO",
     "010042": "DATA DE SOLICITACAO (dd/mm/aaaa) ANTERIOR A DATA DE NASCIMENTO(dd/mm/aaaa)",
-    "010090": "<CAMPO>: DATA INVALIDA (valor)  [regra local do Penna]",
     "010083": "DATA DE ENCERRAMENTO (dd/mm/aaaa) MAIOR QUE DATA DE FIM (dd/mm/aaaa)",
-    "010084": "NUMERO APAC: ENCONTRADO NO HISTORICO DE APAC DO SITE",
+    "010090": "<CAMPO>: DATA INVALIDA (valor)  [regra local do Penna]",
+    # 000005 e estrutural (planilha vazia, competencia invalida/mista): sem
+    # competencia nao ha arquivo valido, entao bloqueia mesmo sem amostra oficial.
+    "000005": "COMPETENCIA / NUMERO APAC invalidos para exportacao (estrutural, sem amostra oficial)",
     # ---- AVS (avisos; o antigo exporta mesmo com eles) ----
+    "010084": "NUMERO APAC: ENCONTRADO NO HISTORICO DE APAC DO SITE",
     "030001": "CNES EXECUTANTE(nnnnnnn) NAO ENCONTRADO",
     "030008": "PROCED.(...) EXIGE HABILITACAO NAO ENCONTRADA NO CNES(nnnnnnn)",
-    # ---- Familia 00xxxx (idade/quantidade/numeracao) e 02xxxx (autorizacao):
-    #      mensagens no padrao observado (LERNOTAS v03.25), codigo HIPOTESE ----
-    "000005": "COMPETENCIA / NUMERO APAC invalidos para exportacao (HIPOTESE)",
+    "030009": "REGRA CONDICIONADA 0009 : PROCEDIMENTO PRINCIPAL IMPEDE VALOR NOS SECUNDARIOS (AVS do R0201)",
+    # ---- Codigos HIPOTESE: mensagens no padrao observado (LERNOTAS v03.25),
+    #      sem amostra oficial do comportamento. Severidade = SEVERIDADE_HIPOTESE ----
     "000006": "PROC.(...) EXIGE PELO MENOS (n) PROC. SECUNDARIO OBRIGATORIO. (HIPOTESE)",
     "000007": "PROC.(...) NAO PERMITIDO PARA SEXO DO USUARIO (HIPOTESE)",
     "000008": "PROC.(...) QTD. ACIMA DO MAXIMO PERMITIDO : n (HIPOTESE)",
     "000009": "PROC. SECUNDARIO (x) NAO PERMITIDO PARA O PROC. PRINCIPAL (HIPOTESE)",
     "010040": "CID (xxxx) NAO ENCONTRADO (HIPOTESE)",
     "010041": "CID (xxxx) NAO PERMITIDO PARA O SEXO DO USUARIO (HIPOTESE)",
-    "030009": "REGRA CONDICIONADA 0009 : PROCEDIMENTO PRINCIPAL IMPEDE VALOR NOS SECUNDARIOS (AVS do R0201)",
 }
+
+# Regras HIPOTESE (sem confirmacao do comportamento oficial) so AVISAM: uma
+# regra errada bloquearia exportacoes validas. Depois de confirmar uma regra
+# com uma amostra real do RCONSIST, mude esta constante para "ERR" (ou mova o
+# codigo para o grupo ERR acima).
+SEVERIDADE_HIPOTESE = "AVS"
+
+_CODIGOS_HIPOTESE = ("000006", "000007", "000008", "000009", "010040", "010041")
+_CODIGOS_ERR = ("000005", "000016", "000024", "010022", "010025", "010027", "010032",
+                "010042", "010083", "010090")
+
+# Severidade de cada codigo (fonte unica para docs/relatorios e testes).
+SEVERIDADE_PADRAO: Dict[str, str] = {
+    cod: ("ERR" if cod in _CODIGOS_ERR else SEVERIDADE_HIPOTESE if cod in _CODIGOS_HIPOTESE else "AVS")
+    for cod in CATALOGO_CODIGOS
+}
+
+
+class ResultadoValidacao(list):
+    """Lista de Ocorrencia (compativel com o retorno antigo) + metadados.
+
+    regras_desativadas: regras que nao rodaram por falta da base de dados
+    (ex.: "CEP (S_CEP)"), para a UI avisar que a validacao foi parcial.
+    """
+
+    def __init__(self, itens: Iterable[Any] = (), regras_desativadas: Iterable[str] = ()):
+        super().__init__(itens)
+        self.regras_desativadas: List[str] = list(regras_desativadas)
 
 
 @dataclass(frozen=True)
@@ -161,19 +191,25 @@ def carregar_base_ceps() -> Optional[Set[str]]:
     return _ceps_cache
 
 
-def carregar_catalogo_procedimentos() -> Optional[Dict[str, Dict[str, str]]]:
-    """S_PA.DBF indexado por codigo (ultima competencia <= a vigente)."""
-    registros = bases.carregar_tabela("S_PA")
+def carregar_catalogo_procedimentos(
+    competencia: str = "", sigtap_competencia: Optional[str] = None
+) -> Optional[Dict[str, Dict[str, str]]]:
+    """S_PA indexado por codigo, na versao vigente na competencia da planilha.
+
+    Usa a competencia mais alta <= `competencia` (nunca uma futura). Sem
+    competencia, cai na mais recente da tabela. None desativa as regras
+    (tabela ausente ou sem versao vigente para o mes).
+    """
+    registros = bases.carregar_tabela("S_PA", sigtap_competencia=sigtap_competencia)
     if not registros:
         return None
-    por_competencia: Dict[str, Dict[str, Dict[str, str]]] = {}
-    for r in registros:
-        pid = r.get("PA_ID", "")
-        if pid:
-            por_competencia.setdefault(r.get("PA_CMP", ""), {})[pid] = r
-    if not por_competencia:
-        return None
-    return por_competencia[max(por_competencia)]
+    if competencia:
+        registros = bases.filtrar_por_competencia(registros, "PA_CMP", competencia)
+    else:
+        mais_recente = max((r.get("PA_CMP", "") for r in registros), default="")
+        registros = [r for r in registros if r.get("PA_CMP", "") == mais_recente]
+    catalogo = {r["PA_ID"]: r for r in registros if r.get("PA_ID")}
+    return catalogo or None
 
 
 def _pares_secundarios(
@@ -504,7 +540,7 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
         if pa is not None and sexo_paciente in ("M", "F", "I"):
             sexo_pa = (pa.get("PA_SEXO") or "").strip().upper()
             if sexo_pa in ("M", "F") and sexo_paciente != sexo_pa and sexo_paciente != "I":
-                coletor.adicionar(cmpt, num_apac, "ERR", "", "000007",
+                coletor.adicionar(cmpt, num_apac, SEVERIDADE_HIPOTESE, "", "000007",
                                   f"PROC.({proc}) NAO PERMITIDO PARA SEXO DO USUARIO")
 
         # QUANTIDADE MAXIMA (HIPOTESE 000008; S_PA: PA_QTDMAX)
@@ -515,13 +551,13 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
                 qtd_max = 9999
             qtd_num = int((qtd or "0").lstrip("0") or 0)
             if qtd_max < 9999 and qtd_num > qtd_max:
-                coletor.adicionar(cmpt, num_apac, "ERR", "", "000008",
+                coletor.adicionar(cmpt, num_apac, SEVERIDADE_HIPOTESE, "", "000008",
                                   f"PROC.({proc}) QTD. ACIMA DO MAXIMO PERMITIDO : {qtd_max}")
 
         # SECUNDARIO OBRIGATORIO (HIPOTESE 000006; S_PA: PA_SECOBRI = S)
         if idx_item == 0 and pa is not None and (pa.get("PA_SECOBRI") or "").strip().upper() == "S":
             if len(itens) < 2:
-                coletor.adicionar(cmpt, num_apac, "ERR", "", "000006",
+                coletor.adicionar(cmpt, num_apac, SEVERIDADE_HIPOTESE, "", "000006",
                                   f"PROC.({proc}) EXIGE PELO MENOS (1) PROC. SECUNDARIO OBRIGATORIO.")
 
         # HABILITACAO (AVS 030008; S_PAHA x XUPSHA, fallback lista fixa)
@@ -541,7 +577,7 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
                 permitidos = pares[principal9]
                 permitidos_sem_dv = {p.lstrip("0") for p in permitidos}
                 if chave not in permitidos and chave.lstrip("0") not in permitidos_sem_dv:
-                    coletor.adicionar(cmpt, num_apac, "ERR", "", "000009",
+                    coletor.adicionar(cmpt, num_apac, SEVERIDADE_HIPOTESE, "", "000009",
                                       f"PROC. SECUNDARIO ({proc}) NAO PERMITIDO PARA O PROC. PRINCIPAL ({itens[0][0]})")
                 else:
                     qtmax_txt = permitidos.get(chave) or ""
@@ -556,7 +592,7 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
                         qtmax = 9999
                     qtd_num = int((qtd or "0").lstrip("0") or 0)
                     if qtmax < 9999 and qtd_num > qtmax:
-                        coletor.adicionar(cmpt, num_apac, "ERR", "", "000008",
+                        coletor.adicionar(cmpt, num_apac, SEVERIDADE_HIPOTESE, "", "000008",
                                           f"PROC.({proc}) QTD. ACIMA DO MAXIMO PERMITIDO : {qtmax}")
 
     # Regra condicionada 0009 (AVS, mensagem impressa no R0201 do antigo)
@@ -575,7 +611,7 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
         if cids is not None:
             # aceita categoria (3 digitos) quando a subcategoria digitada nao existe
             if cid not in cids and cid[:3] not in cids:
-                coletor.adicionar(cmpt, num_apac, "ERR", "CORPO", "010040",
+                coletor.adicionar(cmpt, num_apac, SEVERIDADE_HIPOTESE, "CORPO", "010040",
                                   f"CID ({cid}) NAO ENCONTRADO")
             else:
                 registros_cid = ctx.get("cids_restricoes")
@@ -584,13 +620,35 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
                 restricao = _restricao_sexo_cid(cid[:3], registros_cid)
                 sexo_esperado = {"1": "M", "2": "F"}.get(restricao or "", "")
                 if sexo_esperado and sexo_paciente in ("M", "F") and sexo_paciente != sexo_esperado:
-                    coletor.adicionar(cmpt, num_apac, "ERR", "CORPO", "010041",
+                    coletor.adicionar(cmpt, num_apac, SEVERIDADE_HIPOTESE, "CORPO", "010041",
                                       f"CID ({cid}) NAO PERMITIDO PARA O SEXO DO USUARIO")
 
 
 # ==============================================================================
 # Entrada principal
 # ==============================================================================
+
+def _regras_desativadas(ctx: Dict[str, Any], sigtap_ativo: bool) -> List[str]:
+    """Regras que NAO rodaram por falta de base (validacao parcial).
+
+    As regras SIGTAP desligadas de proposito (usar_sigtap=False) nao entram.
+    """
+    faltando: List[str] = []
+    if ctx.get("base_ceps") is None:
+        faltando.append("CEP inexistente (S_CEP)")
+    if not ctx.get("catalogo_pa"):
+        faltando.append("idade, sexo, quantidade e secundario obrigatorio (S_PA)")
+    if sigtap_ativo:
+        if ctx.get("pares_secundarios") is None:
+            faltando.append("par principal/secundario (S_PAPA)")
+        if ctx.get("habilitacoes_exigidas") is None or ctx.get("habilitacoes_cnes") is None:
+            faltando.append("habilitacao do CNES (S_PAHA/XUPSHA)")
+        if ctx.get("cids_validos") is None:
+            faltando.append("CID valido e restricao de sexo (S_CID)")
+        if not ctx.get("regras_condicionadas"):
+            faltando.append("regra condicionada (S_PAREGR)")
+    return faltando
+
 
 def validar_planilha(
     df: Any,
@@ -607,7 +665,7 @@ def validar_planilha(
     regras_condicionadas: Optional[Dict[str, set]] = None,
     historico_apacs: Optional[Set[str]] = None,
     sigtap_competencia: Optional[str] = None,
-) -> List[Ocorrencia]:
+) -> ResultadoValidacao:
     """Valida TODAS as linhas da planilha carregada (apac_mag_gerador.carregar_planilha).
 
     Devolve as ocorrencias no formato do RCONSIST. A geracao do TXT so pode
@@ -623,13 +681,13 @@ def validar_planilha(
     baixado como fallback caso as tabelas DBF locais nao cubram esse mes.
     """
     if df is None:
-        return [Ocorrencia("", "", "ERR", "CORPO", "000005",
-                           "PLANILHA VAZIA - NENHUMA APAC PARA EXPORTAR")]
+        return ResultadoValidacao([Ocorrencia("", "", "ERR", "CORPO", "000005",
+                                              "PLANILHA VAZIA - NENHUMA APAC PARA EXPORTAR")])
 
     linhas = [dict(serie) for _, serie in df.iterrows()]
     if not linhas:
-        return [Ocorrencia("", "", "ERR", "CORPO", "000005",
-                           "PLANILHA VAZIA - NENHUMA APAC PARA EXPORTAR")]
+        return ResultadoValidacao([Ocorrencia("", "", "ERR", "CORPO", "000005",
+                                              "PLANILHA VAZIA - NENHUMA APAC PARA EXPORTAR")])
 
     coletor = _Coletor()
     competencia_ref = _competencia(linhas[0])
@@ -639,7 +697,7 @@ def validar_planilha(
     if base_ceps is None:
         base_ceps = carregar_base_ceps()
     if catalogo_pa is None:
-        catalogo_pa = carregar_catalogo_procedimentos()
+        catalogo_pa = carregar_catalogo_procedimentos(competencia_ref, sigtap_competencia)
     if usar_sigtap and competencia_ref:
         if pares_secundarios is None:
             pares_secundarios = _pares_secundarios(competencia_ref, sigtap_competencia)
@@ -697,4 +755,7 @@ def validar_planilha(
         coletor.adicionar("", "", "ERR", "CORPO", "000005",
                           "COMPETENCIA (VAZIA) INVALIDA PARA EXPORTACAO")
 
-    return coletor.itens
+    return ResultadoValidacao(
+        coletor.itens,
+        _regras_desativadas(ctx, usar_sigtap and bool(competencia_ref)),
+    )
