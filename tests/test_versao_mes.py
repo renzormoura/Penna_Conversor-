@@ -17,7 +17,10 @@ from pathlib import Path
 
 import apac_mag.config as config
 from apac_mag_gerador import _montar_header, build_patient_lines
-from ui.components import normalizar_versao
+try:
+    from ui.components import normalizar_versao
+except ImportError:  # sem tkinter
+    normalizar_versao = None
 
 
 @contextmanager
@@ -165,6 +168,7 @@ class TestCabecalhoUsaVersaoEscolhida(unittest.TestCase):
         self.assertTrue(header.endswith("Versao 09.99"), header)
 
 
+@unittest.skipIf(normalizar_versao is None, "tkinter indisponível")
 class TestNormalizarVersao(unittest.TestCase):
     """normalizar_versao canoniza a grafia do campo de 12 chars."""
 
