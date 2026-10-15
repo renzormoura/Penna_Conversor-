@@ -18,9 +18,11 @@ Uso típico:
 """
 from __future__ import annotations
 
+import copy
 import json
 import os
 import sys
+import tempfile
 import warnings
 from pathlib import Path
 from typing import Any, Dict
@@ -53,7 +55,7 @@ def _pode_escrever(destino: Path) -> bool:
         teste.write_bytes(b"t")
         teste.unlink()
         return True
-    except Exception:
+    except OSError:
         return False
 
 
@@ -66,15 +68,18 @@ def _materializar_config(destino: Path) -> bool:
     """
     try:
         meipass = getattr(sys, "_MEIPASS", None)
-        origem = Path(meipass) / "penna_config.json" if meipass else None
-        if origem is not None and origem.exists():
-            conteudo = origem.read_bytes()
+        origem = None
+        for nome in ("penna_config.json", "penna_config.example.json"):
+            if meipass and (Path(meipass) / nome).exists():
+                origem = Path(meipass) / nome
+                break
+        if origem is not None:
+            conteudo = origem.read_text(encoding="utf-8")
         else:
-            conteudo = json.dumps(_FALLBACK, ensure_ascii=False, indent=2).encode("utf-8")
-        destino.parent.mkdir(parents=True, exist_ok=True)
-        destino.write_bytes(conteudo)
+            conteudo = json.dumps(_FALLBACK, ensure_ascii=False, indent=2) + "\n"
+        _gravar_atomico(destino, conteudo)
         return True
-    except Exception:
+    except OSError:
         return False
 
 
@@ -119,25 +124,42 @@ def _config_path() -> Path:
 # Valores de fallback (usados quando o JSON não existe)
 # ---------------------------------------------------------------------------
 
+# Histórico de fábrica da versão do cabeçalho por competência (AAAAMM ->
+# "Versao XX.XX"), conferido nos TXTs do programa antigo. Versionado aqui
+# (e espelhado em penna_config.example.json) para valer mesmo sem config.
+_VERSAO_POR_MES_FABRICA: Dict[str, str] = {
+    "202510": "Versao 03.18",
+    "202511": "Versao 03.18",
+    "202512": "Versao 03.18",
+    "202601": "Versao 03.19",
+    "202602": "Versao 03.21",
+    "202603": "Versao 03.21",
+    "202605": "Versao 04.01",
+    "202606": "Versao 04.01",
+}
+
+# Valores de fábrica: identidade do estabelecimento é PLACEHOLDER INVÁLIDO
+# de propósito — nunca um prestador real. Enquanto o config não for
+# preenchido, a exportação é bloqueada (ver verificar_configuracao).
+_NAO_CONFIGURADO = "NAO CONFIGURADO"
+
 _FALLBACK: Dict[str, Any] = {
     "header": {
-        "orgao_responsavel": "CENTRO DE ESPECIALIDADES OFTALCEOF",
-        "cgc": "11111111000111",
-        "destino": "SECRETARIA MUNICIPAL DE SAUDE DE MENDES",
+        "orgao_responsavel": _NAO_CONFIGURADO,
+        "cgc": "00000000000000",
+        "destino": _NAO_CONFIGURADO,
         "destino_indicador": "M",
         "versao": "Versao 04.01",
-        # Histórico por competência (AAAAMM -> "Versao XX.XX"): valores
-        # de fábrica conferidos nos TXTs do programa antigo.
-        "versao_por_mes": {},
+        "versao_por_mes": dict(_VERSAO_POR_MES_FABRICA),
         # Escolhas do usuário pela interface (sobrepondo o histórico).
         "versao_escolhas": {},
     },
     "defaults": {
-        "Codigo_Municipio": "3302809",
-        "Cns_Executante": "123456789012345",
+        "Codigo_Municipio": "0000000",
+        "Cns_Executante": "000000000000000",
         "Numero_Apac_Anterior": "000000000000/0",
-        "Cnes_Solicitante": "4234316",
-        "Cnes_Executante": "4234316",
+        "Cnes_Solicitante": "0000000",
+        "Cnes_Executante": "0000000",
         "Tipo_Apac": "003",
         "Nacionalidade": "10",
         "No_Prontuario": "",
@@ -146,39 +168,76 @@ _FALLBACK: Dict[str, Any] = {
         "Complemento": "",
         "Motivo_Saida": "11",
         "Carater_Atend": "01",
-        "Cod_Orgao_Emiss": "M330280001",
+        "Cod_Orgao_Emiss": _NAO_CONFIGURADO,
     },
 }
 
+# Campos que identificam o estabelecimento: com o valor de fábrica, o
+# arquivo sairia com identidade inválida.
+_CAMPOS_IDENTIDADE = (
+    ("header", "orgao_responsavel"),
+    ("header", "cgc"),
+    ("header", "destino"),
+    ("defaults", "Cnes_Executante"),
+    ("defaults", "Cod_Orgao_Emiss"),
+    ("defaults", "Codigo_Municipio"),
+)
+
+
+class ConfigInvalidaError(RuntimeError):
+    """Config ausente, corrompido ou ainda com valores de fábrica."""
+
+    def __init__(self, problemas: list[str]):
+        self.problemas = list(problemas)
+        super().__init__("\n".join(self.problemas))
+
+
 # Cache interno (singleton por processo)
 _cache: Dict[str, Any] | None = None
+# Problema de leitura do arquivo ("" = leu bem); usado pelo gate de exportação.
+_erro_leitura: str = ""
+
+
+def _mesclar(fabrica: Dict[str, Any], usuario: Any) -> Dict[str, Any]:
+    """Mescla chave a chave: o que o usuário definiu vence a fábrica."""
+    resultado = copy.deepcopy(fabrica)
+    if not isinstance(usuario, dict):
+        return resultado
+    for chave, valor in usuario.items():
+        if isinstance(valor, dict) and isinstance(resultado.get(chave), dict):
+            resultado[chave] = _mesclar(resultado[chave], valor)
+        else:
+            resultado[chave] = valor
+    return resultado
 
 
 def _load() -> Dict[str, Any]:
-    global _cache
+    global _cache, _erro_leitura
     if _cache is not None:
         return _cache
 
     path = _config_path()
+    usuario: Dict[str, Any] = {}
+    _erro_leitura = ""
     if path.exists():
         try:
-            _cache = json.loads(path.read_text(encoding="utf-8"))
-            return _cache
-        except Exception as exc:
-            warnings.warn(
-                f"penna_config.json encontrado em {path} mas não pôde ser lido ({exc}). "
-                "Usando valores padrão.",
-                stacklevel=3,
-            )
+            lido = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(lido, dict):
+                raise ValueError("o conteúdo não é um objeto JSON")
+            usuario = lido
+        except (OSError, ValueError) as exc:  # JSONDecodeError é ValueError
+            _erro_leitura = f"penna_config.json em {path} não pôde ser lido ({exc})."
+            warnings.warn(f"{_erro_leitura} Usando valores de fábrica.", stacklevel=3)
     else:
-        warnings.warn(
-            f"penna_config.json não encontrado (buscado em {path}). "
-            "Usando valores padrão do estabelecimento original. "
-            "Crie o arquivo para configurar outro prestador.",
-            stacklevel=3,
-        )
+        _erro_leitura = f"penna_config.json não encontrado (buscado em {path})."
+        warnings.warn(f"{_erro_leitura} Usando valores de fábrica.", stacklevel=3)
 
-    _cache = _FALLBACK
+    # header/defaults sempre completos: chave ausente cai no valor de fábrica.
+    cfg = _mesclar(_FALLBACK, usuario)
+    for secao in ("header", "defaults"):
+        if not isinstance(cfg.get(secao), dict):
+            cfg[secao] = copy.deepcopy(_FALLBACK[secao])
+    _cache = cfg
     return _cache
 
 
@@ -187,18 +246,40 @@ def _load() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def get_config() -> Dict[str, Any]:
-    """Retorna a configuração completa (dict)."""
+    """Retorna a configuração completa (dict), já mesclada com a de fábrica."""
     return _load()
 
 
 def get_header() -> Dict[str, str]:
     """Retorna a seção 'header' (orgao_responsavel, cgc, destino, etc.)."""
-    return dict(_load().get("header", _FALLBACK["header"]))
+    return dict(_load()["header"])
 
 
 def get_defaults() -> Dict[str, str]:
     """Retorna a seção 'defaults' (Cnes_Executante, Tipo_Apac, etc.)."""
-    return dict(_load().get("defaults", _FALLBACK["defaults"]))
+    return dict(_load()["defaults"])
+
+
+def problemas_configuracao() -> list[str]:
+    """Motivos pelos quais o config não serve para gerar o TXT (vazio = ok)."""
+    cfg = _load()
+    problemas: list[str] = []
+    if _erro_leitura:
+        problemas.append(_erro_leitura)
+    for secao, campo in _CAMPOS_IDENTIDADE:
+        valor = str(cfg[secao].get(campo, "") or "").strip()
+        padrao = str(_FALLBACK[secao].get(campo, "") or "").strip()
+        digitos = valor.replace(".", "").replace("/", "").replace("-", "")
+        if not valor or valor == padrao or (digitos.isdigit() and not digitos.strip("0")):
+            problemas.append(f"{secao}.{campo} não foi preenchido (valor: {valor or 'vazio'}).")
+    return problemas
+
+
+def verificar_configuracao() -> None:
+    """Levanta ConfigInvalidaError quando o config não está pronto para exportar."""
+    problemas = problemas_configuracao()
+    if problemas:
+        raise ConfigInvalidaError(problemas)
 
 
 def _comp_chave(competencia: Any) -> str:
@@ -206,11 +287,8 @@ def _comp_chave(competencia: Any) -> str:
 
     '' quando o valor não identifica um mês (ex.: '000000').
     """
-    try:
-        from apac_mag.normalization import normalize_competence
-        return normalize_competence(competencia)
-    except Exception:
-        return ""
+    from apac_mag.normalization import normalize_competence
+    return normalize_competence(competencia)
 
 
 def get_versao(competencia: Any = "") -> str:
@@ -222,7 +300,7 @@ def get_versao(competencia: Any = "") -> str:
       3. header.versao                   — padrão automático.
     Sem competência identificada, usa o passo 3.
     """
-    h = _load().get("header", _FALLBACK["header"])
+    h = _load()["header"]
     comp = _comp_chave(competencia)
     if comp:
         escolhas = h.get("versao_escolhas") or {}
@@ -235,6 +313,24 @@ def get_versao(competencia: Any = "") -> str:
             return valor
     padrao = str(h.get("versao") or "").strip()
     return padrao or _FALLBACK["header"]["versao"]
+
+
+def _gravar_atomico(path: Path, conteudo: str) -> None:
+    """Grava via arquivo temporário na mesma pasta + os.replace (tudo ou nada)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as arq:
+            arq.write(conteudo)
+            arq.flush()
+            os.fsync(arq.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def set_versao_mes(competencia: Any, versao: str) -> bool:
@@ -256,7 +352,7 @@ def set_versao_mes(competencia: Any, versao: str) -> bool:
         if path.exists():
             cfg = json.loads(path.read_text(encoding="utf-8"))
         else:
-            cfg = json.loads(json.dumps(_FALLBACK))
+            cfg = copy.deepcopy(_FALLBACK)
         if not isinstance(cfg, dict):
             return False
         if not isinstance(cfg.get("header"), dict):
@@ -269,12 +365,8 @@ def set_versao_mes(competencia: Any, versao: str) -> bool:
             mapa[comp] = valor
         else:
             mapa.pop(comp, None)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(cfg, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
-    except Exception:
+        _gravar_atomico(path, json.dumps(cfg, ensure_ascii=False, indent=2) + "\n")
+    except (OSError, ValueError):
         return False
     reload()
     return True
