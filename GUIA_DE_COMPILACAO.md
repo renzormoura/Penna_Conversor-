@@ -47,5 +47,4 @@ build_exe.bat
   `%LOCALAPPDATA%\PennaConversor\penna_config.json` (instalação via setup) ou
   ao lado do EXE (modo standalone).
 - Testes do núcleo: `python -m unittest discover -s tests`
-  (2 falhas conhecidas em `test_excel_patient_flow.py` são pré-existentes no
-  caminho OO `apac_mag.serializers` e não afetam o conversor).
+  (em clone limpo, copie antes `penna_config.example.json` para `penna_config.json`).

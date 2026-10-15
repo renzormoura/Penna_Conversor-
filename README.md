@@ -110,7 +110,7 @@ Fluxo completo, do Excel ao arquivo fiscal:
 planilha .xlsx
      │
      ▼
-[1] Leitura e normalização ────── apac_mag/workbook + normalization
+[1] Leitura e normalização ────── apac_mag_gerador + apac_mag/normalization
      │   colunas canônicas, datas, CPF/CNS, degradação graciosa
      ▼
 [2] Detecção de competência ──── mês da planilha → cabeçalho + extensão
@@ -257,7 +257,7 @@ PENNA_CONVERSOR/
 ├── apac_mag_bases.py       Leitor DBF/ZBF das bases SIA (com cache)
 ├── apac_mag_sigtap_download.py   Download das bases SIGTAP (FTP DATASUS)
 ├── apac_mag/               Núcleo de domínio (config, normalization,
-│                           models, serializers, validation, workbook…)
+│                           utilitários compartilhados)
 ├── ui/                     Interface (theme, components, app)
 ├── dados/
 │   ├── bases_sia/          Bases SIGTAP versionadas

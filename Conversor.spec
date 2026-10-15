@@ -58,13 +58,6 @@ a = Analysis(
         # Submodulos importados dinamicamente / garantia de empacotamento
         'apac_mag.config',
         'apac_mag.normalization',
-        'apac_mag.models',
-        'apac_mag.serializers',
-        'apac_mag.validation',
-        'apac_mag.workbook',
-        'apac_mag.columns',
-        'apac_mag.numbers',
-        'apac_mag.template',
         'ui.theme',
         'ui.components',
         'ui.app',
