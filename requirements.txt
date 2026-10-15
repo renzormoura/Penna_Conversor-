@@ -1,0 +1,18 @@
+# PENNA CONVERSOR — Dependências fixadas do ambiente de desenvolvimento.
+#
+# Instalação: pip install -r requirements.txt
+# Build EXE:  pyinstaller Conversor.spec   (ou use build_exe.bat)
+
+# Leitura e escrita de planilhas Excel
+pandas==2.3.3
+openpyxl==3.1.5
+
+# Fichas do paciente em PDF (uma por linha da planilha)
+reportlab==5.0.1
+
+# Interface gráfica
+Pillow==11.3.0
+tkinterdnd2==0.6.3   # drag-and-drop no tkinter; degradação graciosa se ausente
+
+# Empacotamento em EXE standalone
+pyinstaller==6.22.3

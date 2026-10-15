@@ -1,0 +1,12 @@
+PENNA License
+
+Este software foi desenvolvido para uso interno e operacional da conversão de planilhas Excel para arquivos TXT fiscais.
+
+Ao instalar, você concorda com as condições de uso do software, conforme descrito neste documento.
+
+Termos de uso:
+1. O software deve ser usado apenas para fins autorizados.
+2. É proibida a reprodução, distribuição ou revenda sem autorização escrita.
+3. O autor não se responsabiliza por uso indevido, perda de dados ou falhas operacionais decorrentes do uso do sistema.
+
+Ao prosseguir com a instalação, você aceita estes termos.
