@@ -41,7 +41,7 @@ def validar_linha(linha, ceps=None, pa=None):
             yield None, linha
 
     # CNES executante fixo do fixture, independente do penna_config.json local.
-    with mock.patch.object(v, "_CNES_PADRAO", "4234316"):
+    with mock.patch.object(v, "_cnes_padrao", return_value="4234316"):
         return v.validar_planilha(
             _DF(),
             base_ceps=ceps,

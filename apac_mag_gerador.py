@@ -54,56 +54,6 @@ BLOCK_03_WIDTH = 97    # ações da APAC (tipo 13): 44 + 53 espaços
 HEADER_ORGAO_RESP_WIDTH = 36  # campo do orgão no header (confirmado no arquivo real)
 
 # ---------------------------------------------------------------------------
-# Constantes do estabelecimento: lidas do penna_config.json em runtime.
-# Os atributos de módulo abaixo mantêm retrocompatibilidade com
-# apac_mag_remessa.py e apac_mag_validador.py que os importavam diretamente.
-# ---------------------------------------------------------------------------
-
-def _hdr() -> Dict[str, str]:
-    return get_header()
-
-def _dfl() -> Dict[str, str]:
-    return get_defaults()
-
-
-@property  # não é property real aqui; usamos função para lazy-load
-def _lazy_header_orgao() -> str:
-    return _hdr()["orgao_responsavel"]
-
-
-# Aliases de módulo para retrocompatibilidade (avaliados na primeira leitura)
-# Estes são avaliados uma vez e armazenam o valor; o config pode ser
-# recarregado via apac_mag.config.reload() se necessário.
-def _get_header_const(key: str) -> str:
-    return get_header().get(key, "")
-
-
-HEADER_ORGAO_RESP: str = ""        # preenchido abaixo
-HEADER_CGC: str = ""
-HEADER_DESTINO: str = ""
-HEADER_DESTINO_INDICADOR: str = ""
-HEADER_VERSAO: str = ""
-
-
-def _init_header_consts() -> None:
-    """Inicializa as constantes HEADER_* a partir do config em disco."""
-    global HEADER_ORGAO_RESP, HEADER_CGC, HEADER_DESTINO
-    global HEADER_DESTINO_INDICADOR, HEADER_VERSAO
-    h = get_header()
-    HEADER_ORGAO_RESP = h.get("orgao_responsavel", "")
-    HEADER_CGC = h.get("cgc", "")
-    HEADER_DESTINO = h.get("destino", "")
-    HEADER_DESTINO_INDICADOR = h.get("destino_indicador", "M")
-    HEADER_VERSAO = h.get("versao", "Versao 04.01")
-
-
-_init_header_consts()
-
-# DEFAULT_VALUES: dict vivo que reflete o config — mantido como variável de
-# módulo para retrocompatibilidade com apac_mag_validador e apac_mag_remessa.
-DEFAULT_VALUES: Dict[str, str] = _dfl()
-
-# ---------------------------------------------------------------------------
 # Colunas garantidas no DataFrame
 # ---------------------------------------------------------------------------
 COLUNAS_PLANILHA = (
@@ -179,7 +129,7 @@ def _ibge_code(row: Dict[str, Any]) -> str:
     raw = text(resolve_block_value(row, "Codigo_Municipio", resolve_block_value(row, "IBGE", "")))
     d = _digits_fn(raw)
     if len(d) < 6:
-        d = _digits_fn(DEFAULT_VALUES.get("Codigo_Municipio", ""))
+        d = _digits_fn(get_defaults().get("Codigo_Municipio", ""))
     if len(d) < 6:
         return " " * 7
     return d[:6] + " "
@@ -210,7 +160,7 @@ def build_block_01(row: Dict[str, Any]) -> str:
     Serializa todos os dados cadastrais do paciente e da autorização no
     formato confirmado no arquivo real APCEO26P.JUN.
     """
-    dfl = DEFAULT_VALUES  # referência local para legibilidade
+    dfl = get_defaults()  # lido do config a cada linha (sem estado global)
 
     numero_apac = pad_left(resolve_block_value(row, "Numero_Apac", "0"), 13, "0")
     competencia = competence_from_row(row)
@@ -568,7 +518,7 @@ def carregar_planilha(caminho: Path) -> pd.DataFrame:
         if coluna not in df.columns:
             df[coluna] = ""
     # Garante que células vazias sejam strings vazias (não NaN)
-    for coluna in DEFAULT_VALUES:
+    for coluna in get_defaults():
         if coluna in df.columns:
             df[coluna] = df[coluna].fillna("")
     return df.fillna("")

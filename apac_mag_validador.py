@@ -46,8 +46,6 @@ from apac_mag.normalization import (
 # Configuração do estabelecimento (para DEFAULT_VALUES e CNES padrão)
 from apac_mag.config import get_defaults
 
-# DEFAULT_VALUES: carregado do config uma única vez por processo
-DEFAULT_VALUES: Dict[str, str] = get_defaults()
 
 # Aliases de retrocompatibilidade (outros módulos importavam estes nomes)
 def to_text(value: Any) -> str:
@@ -69,8 +67,9 @@ _APAC_PMAE = "0905010035"
 # CNES 4234316. Com as bases presentes, a regra passa a usar S_PAHA x XUPSHA.
 _PROCEDS_EXIGEM_HABILITACAO = {"0211060020", "0211060127", "0211060232", "0301010072"}
 
-# CNES padrao do estabelecimento (DEFAULT_VALUES do gerador).
-_CNES_PADRAO = (DEFAULT_VALUES.get("Cnes_Executante") or "4234316").zfill(7)
+def _cnes_padrao() -> str:
+    """CNES executante do estabelecimento, lido do config no momento do uso."""
+    return (get_defaults().get("Cnes_Executante") or "").zfill(7)
 
 # Racas validas do campo AP_RACA (01..05 informadas, 99 = sem informacao).
 _RACAS_VALIDAS = {"01", "02", "03", "04", "05", "99"}
@@ -438,9 +437,9 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
                           "NUMERO APAC: ENCONTRADO NO HISTORICO DE APAC DO SITE")
 
     # --- CNES executante (AVS 030001) ---
-    cnes = only_digits(resolve_row_value(row, "Cnes_Executante", DEFAULT_VALUES.get("Cnes_Executante", "")), "")
+    cnes = only_digits(resolve_row_value(row, "Cnes_Executante", get_defaults().get("Cnes_Executante", "")), "")
     cnes7 = cnes.zfill(7)[:7]
-    if cnes7 != _CNES_PADRAO:
+    if cnes7 != _cnes_padrao():
         coletor.adicionar(cmpt, num_apac, "AVS", "CNES", "030001",
                           f"CNES EXECUTANTE({cnes7}) NAO ENCONTRADO")
 
@@ -704,7 +703,7 @@ def validar_planilha(
         if habilitacoes_exigidas is None:
             habilitacoes_exigidas = _habilitacoes_exigidas(competencia_ref, sigtap_competencia)
         if habilitacoes_cnes is None:
-            habilitacoes_cnes = bases.carregar_habilitacoes_cnes(_CNES_PADRAO, competencia_ref)
+            habilitacoes_cnes = bases.carregar_habilitacoes_cnes(_cnes_padrao(), competencia_ref)
         if cids_registros is None:
             # Uma unica carga do S_CID alimenta existencia E restricao de sexo
             # (antes: 1 carga no inicio + 1 varredura O(n) por linha).
