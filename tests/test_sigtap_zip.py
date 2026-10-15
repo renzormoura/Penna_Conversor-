@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest import mock
 
 import apac_mag_sigtap_download as sig
-import apac_mag_validador as v
 from tests.test_validador_exportacao import linha_base, validar_linha
 
 COMP = "202606"

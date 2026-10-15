@@ -377,7 +377,7 @@ def _secao_apac(serie: Dict[str, Any], numero_pagina: int,
         if codigo:
             procedimentos.append((codigo, _digitos(serie.get(f"Sec{idx}_Cbo")), _digitos(serie.get(f"Sec{idx}_Quantidade"))))
 
-    l = linha_estrelas = " " + "*" * 78
+    linha_estrelas = " " + "*" * 78
     partes = [
         linha_estrelas,
         " MS/SAS/DATASUS      SISTEMA DE INFORMACOES AMBULATORIAIS            DATA COMP.",

@@ -544,14 +544,6 @@ class _Modelo:
         except Exception:
             pass
 
-    def valor(self, linha: int, coluna: int) -> str:
-        cel = self.celulas.get((linha, coluna))
-        v = cel["valor"] if cel else ""
-        if not v:
-            ref = f"{get_column_letter(coluna)}{linha}"
-            v = self._valores_originais.get(ref, "")
-        return v
-
     def _esvaziar_dados_da_amostra(self) -> None:
         for ref in _CELULAS_DADOS:
             cel = self.ws[ref]
