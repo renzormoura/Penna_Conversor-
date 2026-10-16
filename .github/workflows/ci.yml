@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install ruff
+      - run: ruff check .
+
+  testes:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install pandas==2.3.3 openpyxl==3.1.5 reportlab==5.0.1 Pillow==11.3.0 tkinterdnd2==0.6.3
+      # O penna_config.json real nao e versionado: os testes usam o modelo fictício.
+      - run: Copy-Item penna_config.example.json penna_config.json
+        shell: powershell
+      - run: python -m unittest discover -s tests
