@@ -2,6 +2,7 @@
 
 Conversor de planilhas Excel em arquivo TXT fiscal APAC-MAG do DATASUS (SIA), com validação de consistência, geração de fichas do paciente em PDF e registro de remessa. Aplicação desktop para Windows, em substituição ao programa APAC-MAG original.
 
+[![CI](https://github.com/renzormoura/Penna_Conversor-/actions/workflows/ci.yml/badge.svg)](https://github.com/renzormoura/Penna_Conversor-/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![Plataforma](https://img.shields.io/badge/Windows-10%2F11-0078D6?logo=windows&logoColor=white)]()
 [![Licença](https://img.shields.io/badge/licença-PENNA%20(custom)-8A2BE2)](LICENSE.txt)
@@ -17,10 +18,11 @@ Conversor de planilhas Excel em arquivo TXT fiscal APAC-MAG do DATASUS (SIA), co
 7. [Colunas da planilha](#colunas-da-planilha)
 8. [Regras de consistência e bases SIGTAP](#regras-de-consistência-e-bases-sigtap)
 9. [Estrutura do projeto](#estrutura-do-projeto)
-10. [Testes e qualidade](#testes-e-qualidade)
-11. [Privacidade e LGPD](#privacidade-e-lgpd)
-12. [Solução de problemas](#solução-de-problemas)
-13. [Licença](#licença)
+10. [Desenvolvimento](#desenvolvimento-1)
+11. [Testes e qualidade](#testes-e-qualidade)
+12. [Privacidade e LGPD](#privacidade-e-lgpd)
+13. [Solução de problemas](#solução-de-problemas)
+14. [Licença](#licença)
 
 ## Objetivo
 
@@ -229,6 +231,26 @@ PENNA_CONVERSOR/
 `-- GUIA_DE_COMPILACAO.md         Guia de compilação
 ```
 
+## Desenvolvimento
+
+Ambiente local:
+
+```bash
+pip install -e .                      # pacote em modo editável (layout src)
+copy penna_config.example.json penna_config.json   # e preencha os dados do estabelecimento
+python -m penna                       # abre a interface
+python -m unittest discover -s tests  # testes
+ruff check .                          # lint
+```
+
+Como estender (detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md)):
+
+- Nova regra de consistência: crie a `Regra` em `src/penna/validation/rules/`, registre o código em `validation/catalog.py` e inclua-a em `rules/__init__.py`.
+- Novo campo do bloco 14: acrescente-o em `ApacBody` (`src/penna/layout/body.py`) na posição do layout e atualize o arquivo de referência de forma consciente (`PENNA_REGENERAR_GOLDEN=1`).
+- Novos pacotes precisam de uma regra de dependência em `tests/test_arquitetura.py`.
+
+Commits seguem mensagens objetivas por mudança; o CI (`unittest` e `ruff`) precisa passar.
+
 ## Testes e qualidade
 
 ```bash
@@ -236,7 +258,7 @@ python -m unittest discover -s tests
 ruff check .
 ```
 
-A suíte cobre o núcleo, o motor de validação, o parser SIGTAP, a remessa, as fichas, a configuração, os serviços, a interface e o fluxo Excel para TXT/PDF, além de um teste que impõe a direção das dependências entre pacotes. Arquivos de referência anonimizados em `tests/fixtures/` validam byte a byte o TXT (cabeçalho e blocos 14, 06 e 13), o comprovante e o demonstrativo. Os testes de interface são ignorados quando o `tkinter` não está disponível.
+A suíte (240 testes) cobre o núcleo, o motor de validação, o parser SIGTAP, a remessa, as fichas, a configuração, os serviços, a interface e o fluxo Excel para TXT/PDF, além de um teste que impõe a direção das dependências entre pacotes. Arquivos de referência anonimizados em `tests/fixtures/` validam byte a byte o TXT (cabeçalho e blocos 14, 06 e 13), o comprovante e o demonstrativo. Os testes de interface são ignorados quando o `tkinter` não está disponível.
 
 Os testes usam apenas dados fictícios. Em um clone limpo, rode `pip install -e .` e copie `penna_config.example.json` para `penna_config.json` antes de executá-los. O workflow de CI executa `unittest` e `ruff` a cada push.
 
