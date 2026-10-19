@@ -11,8 +11,10 @@ from unittest import mock
 
 import pandas as pd
 
+from penna import paths
+
 from penna.config import settings as config
-import apac_mag_gerador as g
+import penna.layout as g
 
 EXEMPLO = Path(__file__).resolve().parent.parent / "penna_config.example.json"
 
@@ -130,7 +132,7 @@ class TestSemEstadoGlobalNaImportacao(unittest.TestCase):
         for cnes in ("7654321", "1111111"):
             base["defaults"]["Cnes_Executante"] = cnes
             with config_em(base):
-                self.assertIn(cnes, g.build_block_01({"Numero_Apac": "3326703612353"}))
+                self.assertIn(cnes, g.build_body_block({"Numero_Apac": "3326703612353"}))
                 self.assertEqual(v._cnes_padrao(), cnes)
 
     def test_sem_constantes_de_modulo_com_o_config(self):
@@ -144,7 +146,7 @@ class TestSemEstadoGlobalNaImportacao(unittest.TestCase):
 class TestSemCsvDeNumeracaoComDadosPessoais(unittest.TestCase):
     def test_exportar_txt_nao_grava_csv_com_nome_e_cpf(self):
         self.assertFalse(hasattr(g, "_salvar_numeracao_usada"))
-        csv = Path(g.__file__).resolve().parent / g.OUTPUT_FOLDER_NAME / "numeracao_apac_usada.csv"
+        csv = paths.project_root() / "Formatado" / "numeracao_apac_usada.csv"
         existia = csv.exists()
         antes = csv.stat().st_mtime if existia else None
         with tempfile.TemporaryDirectory() as td, \

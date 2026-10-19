@@ -29,11 +29,7 @@ from typing import Any, Dict, List, Optional, Set
 
 # Serialização e helpers do gerador (mantidos por dependência de build_patient_lines
 # e das funções de checksum/header que são lógica de negócio do gerador)
-from apac_mag_gerador import (
-    _calcular_checksum,
-    _competencia_header,
-    build_patient_lines,
-)
+from penna.layout import build_patient_lines, compute_checksum, header_competence
 # Helpers de string: fonte única em penna.core
 from penna.core import (
     digits as _digits_fn,
@@ -201,10 +197,10 @@ def calcular_resumo(df: Any) -> Dict[str, Any]:
     for _, serie in df.iterrows():
         linhas.extend(build_patient_lines(dict(serie)))
     return {
-        "competencia": _competencia_header(linhas),
+        "competencia": header_competence(linhas),
         "qtde_apacs": sum(1 for l in linhas if l.startswith("14")),
         "registros": len(linhas) + 1,  # + header
-        "checksum": _calcular_checksum(linhas),
+        "checksum": compute_checksum(linhas),
     }
 
 
@@ -463,7 +459,7 @@ def gerar_demonstrativo(df: Any, destino: Optional[Path] = None,
         linhas: List[str] = []
         for _, serie in df.iterrows():
             linhas.extend(build_patient_lines(dict(serie)))
-        competencia = _competencia_header(linhas)
+        competencia = header_competence(linhas)
         pasta = (Path(pasta_base) if pasta_base else _pasta_remessas_padrao()) / (competencia or "SEMCOMP") / "demonstrativo"
         pasta.mkdir(parents=True, exist_ok=True)
         destino = pasta / f"Demonstrativo_{_digitos(primeira.get('Numero_Apac'), 'APAC')[:13]}.TXT"

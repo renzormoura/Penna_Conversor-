@@ -15,7 +15,6 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from penna import reference as bases
 from penna.reference import tables as bases_tables
 import apac_mag_validador as v
 from penna.core import resolve_row_value

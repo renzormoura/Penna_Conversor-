@@ -37,12 +37,14 @@ log = logging.getLogger("penna.ui")
 # Falhas esperadas de widget/thread Tk (janela destruida, fora do loop principal).
 _ERROS_TK = (TclError, RuntimeError)
 
-from apac_mag_gerador import (
+from penna.layout import (
     carregar_planilha,
     competencia_da_planilha,
-    extensao_mes_competencia,
     exportar_txt,
+    extensao_mes_competencia,
     forcar_extensao_mes,
+    nome_saida_sugerido,
+    normalize_output_name,  # noqa: F401 (re-exportado por apac_mag_gui)
 )
 from apac_mag_validador import (
     Ocorrencia,  # noqa: F401 — re-exported for external callers
@@ -92,24 +94,6 @@ def formatar_tamanho_bytes(tamanho: int) -> str:
     if tamanho < 1024 * 1024:
         return f"{tamanho / 1024:.1f} KB"
     return f"{tamanho / (1024 * 1024):.1f} MB"
-
-
-def normalize_output_name(excel_path: Path) -> str:
-    if excel_path.name.lower() == "base exemplo.xlsx":
-        return "base_exemplo_formatado.txt"
-    return f"{excel_path.stem}_formatado.txt"
-
-
-def nome_saida_sugerido(excel_path: Path, competencia: str = "") -> str:
-    """Nome sugerido no diálogo salvar: nome à escolha + extensão do mês.
-
-    O final é fixo pelo mês da competência analisada na planilha
-    (ex.: 'base_exemplo_formatado.JUN'); sem mês identificado, mantém .txt.
-    """
-    extensao = extensao_mes_competencia(competencia)
-    if not extensao:
-        return normalize_output_name(excel_path)
-    return str(Path(normalize_output_name(excel_path)).with_suffix(extensao))
 
 
 def parse_dropped_path(raw_value) -> str:

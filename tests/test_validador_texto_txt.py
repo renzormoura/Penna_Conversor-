@@ -59,7 +59,7 @@ class TestCaracteres(unittest.TestCase):
 
         import pandas as pd
 
-        import apac_mag_gerador as g
+        import penna.layout as g
         from tests.test_config_seguro import EXEMPLO, config_em
         with tempfile.TemporaryDirectory() as td, config_em(EXEMPLO.read_text(encoding="utf-8")):
             with self.assertRaises(UnicodeEncodeError):

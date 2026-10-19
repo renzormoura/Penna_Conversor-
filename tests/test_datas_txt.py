@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import unittest
 
-import apac_mag_gerador as g
+import penna.layout as g
 from penna.core import normalize_date
 from tests.test_validador_exportacao import linha_base, validar_linha
 
@@ -28,11 +28,11 @@ class TestNormalizeDate(unittest.TestCase):
 class TestGeradorDatas(unittest.TestCase):
     def test_todos_formatos_geram_mesmo_txt(self):
         for campo in CAMPOS:
-            referencia = g.build_block_01(linha_base(**{campo: "20260615"}))
+            referencia = g.build_body_block(linha_base(**{campo: "20260615"}))
             self.assertIn("20260615", referencia, campo)
             for entrada in FORMATOS:
                 with self.subTest(campo=campo, entrada=entrada):
-                    self.assertEqual(g.build_block_01(linha_base(**{campo: entrada})), referencia)
+                    self.assertEqual(g.build_body_block(linha_base(**{campo: entrada})), referencia)
 
 
 class TestValidadorDatas(unittest.TestCase):

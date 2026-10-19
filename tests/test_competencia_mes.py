@@ -15,19 +15,16 @@ from datetime import datetime
 from pathlib import Path
 
 from penna.core import normalize_competence, resolve_competence
-from apac_mag_gerador import (
-    _montar_header,
+from penna.layout import (
+    build_header as _montar_header,
     build_patient_lines,
-    competencia_da_planilha,
     competence_from_row,
+    competencia_da_planilha,
     extensao_mes_competencia,
     forcar_extensao_mes,
+    nome_saida_sugerido,
     sigla_mes_competencia,
 )
-try:
-    from ui.app import nome_saida_sugerido
-except ImportError:  # sem tkinter
-    nome_saida_sugerido = None
 
 
 class _DF:
@@ -169,7 +166,6 @@ class TestExtensaoDoMes(unittest.TestCase):
     def test_sem_competencia_o_nome_fica_intacto(self):
         self.assertEqual(forcar_extensao_mes("meu.txt", "").name, "meu.txt")
 
-    @unittest.skipIf(nome_saida_sugerido is None, "tkinter indisponível")
     def test_nome_sugerido_no_dialogo_usa_extensao_do_mes(self):
         self.assertEqual(
             nome_saida_sugerido(Path("base exemplo.xlsx"), "202606"),

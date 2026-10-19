@@ -18,7 +18,8 @@ from unittest import mock
 
 import pandas as pd
 
-import apac_mag_gerador as g
+import penna.layout as g
+from penna.layout import constants
 from tests.test_config_seguro import EXEMPLO, config_em
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "apac_referencia.txt"
@@ -71,7 +72,7 @@ LINHA_REFERENCIA = {
 def gerar_bytes() -> bytes:
     with tempfile.TemporaryDirectory() as td, \
             config_em(EXEMPLO.read_text(encoding="utf-8")), \
-            mock.patch.object(g, "_data_geracao", return_value="20260701"):
+            mock.patch("penna.layout.header.generation_date", return_value="20260701"):
         saida = Path(td) / "saida.txt"
         g.exportar_txt(pd.DataFrame([LINHA_REFERENCIA]), saida)
         return saida.read_bytes()
@@ -97,8 +98,8 @@ class TestGoldenTxt(unittest.TestCase):
         self.assertEqual(tipos, ["01", "14", "06", "13", "13", "13"])
         self.assertEqual(len(linhas[0]), 134)
         self.assertTrue(linhas[0].startswith("01#APAC202606000001"))
-        self.assertEqual(len(linhas[1]), g.BLOCK_01_WIDTH)
-        self.assertEqual([len(linha) for linha in linhas[3:5]], [g.BLOCK_03_WIDTH] * 2)
+        self.assertEqual(len(linhas[1]), constants.BODY_WIDTH)
+        self.assertEqual([len(linha) for linha in linhas[3:5]], [constants.ACTION_WIDTH] * 2)
         self.assertEqual(len(linhas[5]), 44)  # ultimo 13 sem padding
 
     def test_cada_bloco_bate_com_o_golden(self):
