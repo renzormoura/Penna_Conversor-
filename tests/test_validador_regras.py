@@ -124,10 +124,7 @@ if __name__ == "__main__":
 
 class TestTextoRegrasDesativadas(unittest.TestCase):
     def test_texto_para_a_ui(self):
-        try:
-            from ui.app import texto_regras_desativadas
-        except ImportError:  # sem tkinter
-            self.skipTest("tkinter indisponivel")
+        from penna.services.validation import texto_regras_desativadas
         self.assertEqual(texto_regras_desativadas([]), "")
         texto = texto_regras_desativadas(["CEP inexistente (S_CEP)", "CID (S_CID)"])
         self.assertTrue(texto.startswith("2 regras desativadas nesta validação"))

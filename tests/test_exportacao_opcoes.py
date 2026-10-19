@@ -23,10 +23,13 @@ from unittest import mock
 
 import pandas as pd
 
+from penna import remittance
+from penna.services import validation as validacao_servico
+
 try:
     import tkinter as tk
-    from ui import app as ui_app
-    from ui.app import PennaApp
+    from penna.ui import app as ui_app
+    from penna.ui.app import PennaApp
 except ImportError:  # sem tkinter: as classes de UI abaixo sao puladas
     tk = ui_app = PennaApp = None
 
@@ -123,14 +126,14 @@ class TestExportacaoComOpcoes(unittest.TestCase):
             app._conversao_ativa = False
 
             # gate coberto por test_validador_*; aqui interessa o fluxo da UI
-            with mock.patch.object(ui_app, "validar_planilha", return_value=[]), \
+            with mock.patch.object(validacao_servico, "validar_planilha", return_value=[]), \
                     mock.patch.object(ui_app, "messagebox") as messagebox, \
                     mock.patch.object(ui_app.filedialog, "asksaveasfilename",
                                       return_value=str(destino_txt)) as salvar, \
                     mock.patch.object(ui_app.filedialog, "askdirectory",
                                       return_value=str(pasta_fichas)) as pasta, \
                     mock.patch.object(
-                        ui_app.remittance, "registrar_remessa",
+                        remittance, "registrar_remessa",
                         side_effect=RuntimeError("remessa desativada no teste")):
                 app.run_conversion()
                 concluiu = self._esperar(

@@ -30,11 +30,14 @@ from unittest import mock
 
 import pandas as pd
 
+from penna import remittance  # noqa: F401
+from penna.services import validation as validacao_servico
+
 try:
     import tkinter as tk
-    from ui import app as ui_app
-    from ui.app import PennaApp
-    from ui.components import SigtapSelector
+    from penna.ui import app as ui_app
+    from penna.ui.app import PennaApp
+    from penna.ui.widgets import SigtapSelector
 except ImportError:  # sem tkinter: as classes de UI abaixo sao puladas
     tk = ui_app = PennaApp = SigtapSelector = None
 
@@ -50,24 +53,23 @@ def _esperar(condicao, root, timeout: float = 5.0) -> bool:
     return condicao()
 
 
-@unittest.skipIf(tk is None, "tkinter indisponível")
 class TestResolverSigtap(unittest.TestCase):
-    """_resolver_sigtap (thread-safe, sem UI): cache decide o mês."""
+    """resolver_sigtap (serviço, sem UI): o cache decide o mês."""
 
     def test_usa_mes_da_planilha_quando_zip_em_cache(self):
         with mock.patch("penna.reference.sigtap.listar_competencias_cache",
                         return_value=["202604"]):
-            self.assertEqual(PennaApp._resolver_sigtap("", "202604"), "202604")
+            self.assertEqual(validacao_servico.resolver_sigtap("", "202604"), "202604")
 
     def test_sem_zip_em_cache_devolve_vazio_para_fallback_local(self):
         with mock.patch("penna.reference.sigtap.listar_competencias_cache",
                         return_value=[]):
-            self.assertEqual(PennaApp._resolver_sigtap("", "202604"), "")
+            self.assertEqual(validacao_servico.resolver_sigtap("", "202604"), "")
 
     def test_escolha_manual_vence_o_cache(self):
         with mock.patch("penna.reference.sigtap.listar_competencias_cache",
                         return_value=["202604"]):
-            self.assertEqual(PennaApp._resolver_sigtap("202601", "202604"),
+            self.assertEqual(validacao_servico.resolver_sigtap("202601", "202604"),
                              "202601")
 
 
@@ -249,7 +251,7 @@ class TestSincronizacaoNoFluxoReal(unittest.TestCase):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             excel = self._excel_tmp(Path(tmp))
             app.file_var.set(str(excel))
-            with mock.patch.object(ui_app, "validar_planilha", return_value=[]), \
+            with mock.patch.object(validacao_servico, "validar_planilha", return_value=[]), \
                  mock.patch.object(PennaApp, "_sincronizar_sigtap_planilha") as sync:
                 app.test_load()
                 self.assertTrue(
@@ -266,7 +268,7 @@ class TestSincronizacaoNoFluxoReal(unittest.TestCase):
             app.var_exportar_txt.set(True)
             app.var_exportar_fichas.set(False)
             app._conversao_ativa = False
-            with mock.patch.object(ui_app, "validar_planilha", return_value=[]), \
+            with mock.patch.object(validacao_servico, "validar_planilha", return_value=[]), \
                  mock.patch.object(ui_app, "messagebox") as messagebox, \
                  mock.patch.object(ui_app.filedialog, "asksaveasfilename",
                                    return_value=str(tmp_path / "saida.txt")), \

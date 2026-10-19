@@ -280,7 +280,7 @@ class TestOpcoesDeExportacao(unittest.TestCase):
 
     @staticmethod
     def _app(txt, fichas):
-        from ui.app import PennaApp
+        from penna.ui.app import PennaApp
 
         app = types.SimpleNamespace(
             var_exportar_txt=types.SimpleNamespace(get=lambda: txt),
@@ -298,7 +298,7 @@ class TestOpcoesDeExportacao(unittest.TestCase):
         self.assertEqual(self._app(True, True), (True, True))
 
     def test_objeto_sem_variaveis_mantem_comportamento_antigo(self):
-        from ui.app import PennaApp
+        from penna.ui.app import PennaApp
 
         app = types.SimpleNamespace()  # testes antigos / objetos-falsos
         self.assertEqual(PennaApp._opcoes_exportacao(app), (True, False))

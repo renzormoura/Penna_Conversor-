@@ -18,10 +18,7 @@ from pathlib import Path
 from penna.config import settings as config
 from penna.layout import build_header as _montar_header
 from penna.layout import build_patient_lines
-try:
-    from ui.components import normalizar_versao
-except ImportError:  # sem tkinter
-    normalizar_versao = None
+from penna.config import normalizar_versao
 
 
 @contextmanager
@@ -169,7 +166,6 @@ class TestCabecalhoUsaVersaoEscolhida(unittest.TestCase):
         self.assertTrue(header.endswith("Versao 09.99"), header)
 
 
-@unittest.skipIf(normalizar_versao is None, "tkinter indisponível")
 class TestNormalizarVersao(unittest.TestCase):
     """normalizar_versao canoniza a grafia do campo de 12 chars."""
 

@@ -243,6 +243,17 @@ def get_versao(competencia: Any = "") -> str:
     return str(h.get("versao") or "").strip() or _FALLBACK["header"]["versao"]
 
 
+def normalizar_versao(texto: Any) -> str:
+    """``'04.01'`` -> ``'Versao 04.01'``; ``'versao 03.21'`` -> ``'Versao 03.21'``; vazio -> ``''``.
+
+    Só canoniza a grafia do campo de 12 caracteres do cabeçalho; não valida o formato.
+    """
+    t = str(texto or "").strip()
+    if not t:
+        return ""
+    return "Versao" + t[6:] if t.lower().startswith("versao") else f"Versao {t}"
+
+
 def set_versao_mes(competencia: Any, versao: str) -> bool:
     """Grava (ou remove, com ``versao=''``) a escolha do usuário para o mês.
 

@@ -21,10 +21,11 @@ from unittest import mock
 
 try:
     import tkinter as tk
-    from ui import app as ui_app
-    from ui.app import PennaApp
+    from penna.ui import app as ui_app
+    from penna.ui.app import PennaApp
+    from penna.ui.tasks import TaskRunner
 except ImportError:  # sem tkinter: as classes de UI abaixo sao puladas
-    tk = ui_app = PennaApp = None
+    tk = ui_app = PennaApp = TaskRunner = None
 
 
 def _esperar(condicao, root, timeout: float = 5.0) -> bool:
@@ -57,24 +58,16 @@ class _BaseComTk(unittest.TestCase):
             pass
 
     def app_falso(self):
-        """Objeto com o estado mínimo que _iniciar_tarefa manipula."""
-        app = types.SimpleNamespace(
-            root=self.root,
-            _tarefa_cb=None,
-            _tarefa_seq=0,
-            _tarefa_holder=None,
-            _tarefa_overlay=None,
-            _conversao_ativa=False,
-            status=[],
-        )
-        app._fechar_overlay = lambda: PennaApp._fechar_overlay(app)
-        app._set_status = lambda msg, tipo="info": app.status.append((msg, tipo))
-        return app
+        """Estado mínimo da janela para o guarda de reentrada do EXECUTAR."""
+        return types.SimpleNamespace(root=self.root, _conversao_ativa=False, status=[])
+
+    def runner(self):
+        return TaskRunner(self.root)
 
 
 class TestIniciarTarefa(_BaseComTk):
     def test_concluso_entrega_resultado_na_thread_principal(self):
-        app = self.app_falso()
+        runner = self.runner()
         recebido: dict = {}
 
         def funcao(progresso):
@@ -86,7 +79,7 @@ class TestIniciarTarefa(_BaseComTk):
             recebido["res"] = res
             recebido["thread"] = threading.current_thread().name
 
-        PennaApp._iniciar_tarefa(app, "Titulo", "detalhe", funcao, ao_concluir)
+        runner.iniciar("Titulo", "detalhe", funcao, ao_concluir)
         self.assertTrue(_esperar(lambda: "res" in recebido, self.root),
                         "callback não rodou")
 
@@ -94,25 +87,25 @@ class TestIniciarTarefa(_BaseComTk):
         self.assertEqual(recebido["res"]["valor"], 42)
         self.assertEqual(recebido["thread"], threading.current_thread().name)
         # overlay fechado e fases registradas para o progresso
-        self.assertIsNone(app._tarefa_overlay)
-        self.assertIsNone(app._tarefa_cb)
-        self.assertEqual(app._tarefa_holder["fases"][0], ("Lendo…", "etapa 1"))
+        self.assertIsNone(runner.overlay)
+        self.assertIsNone(runner.callback)
+        self.assertEqual(runner.holder["fases"][0], ("Lendo…", "etapa 1"))
 
     def test_erro_da_funcao_vai_para_o_callback(self):
-        app = self.app_falso()
+        runner = self.runner()
         recebido: dict = {}
 
         def funcao(progresso):
             raise ValueError("boom")
 
-        PennaApp._iniciar_tarefa(app, "Titulo", "", funcao, recebido.update)
+        runner.iniciar("Titulo", "", funcao, recebido.update)
         self.assertTrue(_esperar(lambda: bool(recebido), self.root))
         self.assertFalse(recebido["ok"])
         self.assertIsInstance(recebido["erro"], ValueError)
-        self.assertIsNone(app._tarefa_overlay)
+        self.assertIsNone(runner.overlay)
 
     def test_tarefa_nova_cancela_a_anterior(self):
-        app = self.app_falso()
+        runner = self.runner()
         trava = threading.Event()
         chamadas_antigo: list = []
         novo: dict = {}
@@ -121,12 +114,11 @@ class TestIniciarTarefa(_BaseComTk):
             trava.wait(2.0)
             return "A"
 
-        PennaApp._iniciar_tarefa(
-            app, "A", "", funcao_lenta, lambda res: chamadas_antigo.append(dict(res)))
+        runner.iniciar("A", "", funcao_lenta, lambda res: chamadas_antigo.append(dict(res)))
         # dá a tarefa A tempo de estar em andamento
         time.sleep(0.1)
         self.root.update()
-        PennaApp._iniciar_tarefa(app, "B", "", lambda p: "B", novo.update)
+        runner.iniciar("B", "", lambda p: "B", novo.update)
 
         self.assertEqual(len(chamadas_antigo), 1)
         self.assertTrue(chamadas_antigo[0]["cancelada"])
@@ -138,7 +130,7 @@ class TestIniciarTarefa(_BaseComTk):
         time.sleep(0.2)
         self.root.update()
         self.assertEqual(len(chamadas_antigo), 1)
-        self.assertIsNone(app._tarefa_cb)
+        self.assertIsNone(runner.callback)
 
 
 class TestGuardaDeReentrada(_BaseComTk):

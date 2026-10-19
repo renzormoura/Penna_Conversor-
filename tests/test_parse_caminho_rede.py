@@ -10,10 +10,7 @@ from __future__ import annotations
 
 import unittest
 
-try:
-    from apac_mag_gui import parse_dropped_path
-except ImportError as exc:  # sem tkinter
-    raise unittest.SkipTest(f"tkinter indisponível: {exc}")
+from penna.services.files import parse_dropped_path
 
 
 class ParseUncTests(unittest.TestCase):
