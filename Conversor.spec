@@ -35,6 +35,7 @@ a = Analysis(
         # Configuracao do estabelecimento (so quando existe — o arquivo
         # real com dados do prestador nao e versionado; sem ele o app usa
         # os valores de fabrica de apac_mag/config.py)
+        ("penna_config.example.json", "."),
         *([("penna_config.json", ".")]
           if os.path.exists(os.path.join(SPECPATH, "penna_config.json"))
           else []),

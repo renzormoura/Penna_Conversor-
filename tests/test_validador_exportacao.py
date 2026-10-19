@@ -40,13 +40,15 @@ def validar_linha(linha, ceps=None, pa=None):
         def iterrows(self):
             yield None, linha
 
-    return v.validar_planilha(
-        _DF(),
-        base_ceps=ceps,
-        catalogo_pa={} if pa is None else pa,  # {} = catalogo vazio (regra desativada)
-        usar_sigtap=False,
-        usar_remessa=False,
-    )
+    # CNES executante fixo do fixture, independente do penna_config.json local.
+    with mock.patch.object(v, "_CNES_PADRAO", "4234316"):
+        return v.validar_planilha(
+            _DF(),
+            base_ceps=ceps,
+            catalogo_pa={} if pa is None else pa,  # {} = catalogo vazio (regra desativada)
+            usar_sigtap=False,
+            usar_remessa=False,
+        )
 
 
 class TestFormatoRconsist(unittest.TestCase):

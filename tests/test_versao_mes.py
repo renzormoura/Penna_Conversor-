@@ -177,10 +177,10 @@ class TestNormalizarVersao(unittest.TestCase):
 
 
 class TestConfigDeFabrica(unittest.TestCase):
-    """O penna_config.json do projeto traz o histórico conferido no antigo."""
+    """O penna_config.example.json (versionado) traz o histórico conferido no antigo."""
 
     def test_mapa_historico_presente(self):
-        caminho = Path(__file__).resolve().parent.parent / "penna_config.json"
+        caminho = Path(__file__).resolve().parent.parent / "penna_config.example.json"
         dados = json.loads(caminho.read_text(encoding="utf-8"))
         mapa = dados["header"]["versao_por_mes"]
         self.assertEqual(mapa["202512"], "Versao 03.18")

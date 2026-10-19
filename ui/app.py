@@ -42,6 +42,7 @@ from apac_mag_validador import (
     validar_planilha,
     resumo as resumo_ocorrencias,
 )
+from apac_mag.config import ConfigInvalidaError, verificar_configuracao
 import apac_mag_fichas
 import apac_mag_remessa
 
@@ -779,6 +780,19 @@ class PennaApp:
         """
         if self._conversao_ativa:
             return  # já há conversão em andamento
+        try:
+            verificar_configuracao()
+        except ConfigInvalidaError as exc:
+            self._set_status("Configuração do estabelecimento inválida. Nada foi gerado.", tipo="erro")
+            messagebox.showerror(
+                "Configuração inválida",
+                "O penna_config.json está ausente, corrompido ou ainda com valores de "
+                "fábrica. Sem ele o arquivo sairia com a identidade de outro "
+                "estabelecimento, então a exportação foi bloqueada.\n\n"
+                + "\n".join(f"• {p}" for p in exc.problemas)
+                + "\n\nCorrija o arquivo (modelo: penna_config.example.json) e reabra o programa.",
+            )
+            return
         file_path = self.file_var.get().strip()
         if not file_path:
             messagebox.showwarning("Arquivo não informado",

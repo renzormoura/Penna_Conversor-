@@ -1,0 +1,38 @@
+{
+  "_comentario": "Modelo com valores FICTICIOS. Copie para penna_config.json e preencha com os dados do seu estabelecimento (CNES, CGC, orgao, destino, municipio).",
+  "header": {
+    "orgao_responsavel": "ESTABELECIMENTO EXEMPLO",
+    "cgc": "12345678000195",
+    "destino": "SECRETARIA MUNICIPAL DE SAUDE EXEMPLO",
+    "destino_indicador": "M",
+    "versao": "Versao 04.01",
+    "_comentario_versao": "Versao do cabecalho 01#APAC por competencia (AAAAMM). versao_por_mes = historico de fabrica; versao_escolhas = escolhas feitas na interface (sobrepoem). Sem entrada, vale 'versao'.",
+    "versao_por_mes": {
+      "202510": "Versao 03.18",
+      "202511": "Versao 03.18",
+      "202512": "Versao 03.18",
+      "202601": "Versao 03.19",
+      "202602": "Versao 03.21",
+      "202603": "Versao 03.21",
+      "202605": "Versao 04.01",
+      "202606": "Versao 04.01"
+    },
+    "versao_escolhas": {}
+  },
+  "defaults": {
+    "Codigo_Municipio": "3550308",
+    "Cns_Executante": "123456789012345",
+    "Numero_Apac_Anterior": "000000000000/0",
+    "Cnes_Solicitante": "1234567",
+    "Cnes_Executante": "1234567",
+    "Tipo_Apac": "003",
+    "Nacionalidade": "10",
+    "No_Prontuario": "",
+    "Cns_Paciente": "",
+    "Situacao_De_Rua": "N",
+    "Complemento": "",
+    "Motivo_Saida": "11",
+    "Carater_Atend": "01",
+    "Cod_Orgao_Emiss": "M355030001"
+  }
+}

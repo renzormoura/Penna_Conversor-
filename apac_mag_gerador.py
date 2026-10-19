@@ -37,7 +37,7 @@ from apac_mag.normalization import (
     text,
     text_upper,
 )
-from apac_mag.config import get_defaults, get_header, get_versao
+from apac_mag.config import get_defaults, get_header, get_versao, verificar_configuracao
 
 # ---------------------------------------------------------------------------
 # Constantes de layout (imutáveis — não dependem de configuração)
@@ -575,7 +575,12 @@ def carregar_planilha(caminho: Path) -> pd.DataFrame:
 
 
 def exportar_txt(df: pd.DataFrame, caminho_saida: Path) -> pd.DataFrame:
-    """Gera o arquivo TXT fiscal em CP1252 no padrão APAC-MAG."""
+    """Gera o arquivo TXT fiscal em CP1252 no padrão APAC-MAG.
+
+    Levanta ConfigInvalidaError se o penna_config.json estiver ausente,
+    corrompido ou com valores de fábrica (identidade do estabelecimento).
+    """
+    verificar_configuracao()
     _avisar_apacs_sem_numero(df)
     linhas: List[str] = []
 

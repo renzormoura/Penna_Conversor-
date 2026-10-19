@@ -154,6 +154,12 @@ O arquivo `penna_config.json` define o **header fiscal** e os valores padrão
 da planilha. Ele **não é versionado no Git** (é dado privado do
 estabelecimento) — ver também a seção [Privacidade](#-privacidade).
 
+Parta do modelo versionado `penna_config.example.json` (valores fictícios):
+copie para `penna_config.json` e preencha. Chaves ausentes herdam o valor de
+fábrica, mas a identidade (CNES, CGC, órgão, destino, município) não tem valor
+de fábrica válido: com o arquivo ausente, corrompido ou ainda com
+`NAO CONFIGURADO`/zeros, **a exportação é bloqueada** com um aviso na tela.
+
 Local conforme o modo de execução:
 
 | Modo | Caminho |
