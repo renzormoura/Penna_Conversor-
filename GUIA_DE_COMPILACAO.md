@@ -46,5 +46,6 @@ build_exe.bat
   cliente, o arquivo editável fica em
   `%LOCALAPPDATA%\PennaConversor\penna_config.json` (instalação via setup) ou
   ao lado do EXE (modo standalone).
-- Testes do núcleo: `python -m unittest discover -s tests`
+- O código fica em `src/penna`; o spec usa `pathex=['src']` e a entrada `src/penna/__main__.py`.
+- Testes: `pip install -e .` e `python -m unittest discover -s tests`
   (em clone limpo, copie antes `penna_config.example.json` para `penna_config.json`).

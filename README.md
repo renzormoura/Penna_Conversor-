@@ -61,9 +61,9 @@ Na primeira execução, configure o estabelecimento conforme a seção [Configur
 
 1. Instale o [Python 3.10 ou superior](https://www.python.org/downloads/) com a opção Add to PATH.
 2. Instale o [Inno Setup 6](https://jrsoftware.org/isdl.php) (somente para gerar o instalador).
-3. Instale as dependências: `pip install -r requirements.txt`.
+3. Instale o projeto e as dependências em modo editável: `pip install -e .`.
 4. Copie `penna_config.example.json` para `penna_config.json` e preencha os dados do estabelecimento.
-5. Execute os testes: `python -m unittest discover -s tests`.
+5. Execute a interface com `python -m penna` e os testes com `python -m unittest discover -s tests`.
 6. Gere os artefatos, conforme o [guia de compilação](GUIA_DE_COMPILACAO.md):
 
 ```bash
@@ -92,31 +92,31 @@ build_exe.bat         # somente dist\PennaConversor.exe
 planilha .xlsx
      |
      v
-[1] Leitura e normalização      apac_mag_gerador, apac_mag/normalization
+[1] Leitura e normalização      penna.layout.workbook, penna.core
      |   colunas canônicas, datas, CPF/CNS
      v
 [2] Detecção de competência     mês da planilha -> cabeçalho e extensão
      |   seletor SIGTAP posicionado no mês
      v
-[3] Gate de consistência        apac_mag_validador
+[3] Gate de consistência        penna.validation (motor de regras)
      |   checagens clássicas (APAC, CEP, nascimento, raça, datas)
      |   regras SIGTAP da competência
      |   ERR bloqueia; AVS lista e prossegue
      v
-[4] Serialização fiscal         apac_mag_gerador
+[4] Serialização fiscal         penna.layout (ApacBody, blocos, cabeçalho)
      |   cabeçalho 01#APAC (checksum) e blocos 14, 06 e 13
      |   CP1252, CRLF, layout de largura fixa
      v
-[5] Exportação                  conforme as opções marcadas
-     |   TXT fiscal e/ou fichas em PDF
+[5] Exportação                  penna.services.export
+     |   TXT fiscal e/ou fichas em PDF (penna.cards)
      v
-[6] Remessa                     apac_mag_remessa
+[6] Remessa                     penna.remittance
          cópia, comprovante, demonstrativo e histórico
 ```
 
 Decisões de projeto:
 
-- O núcleo não conhece a interface. `apac_mag/` (utilitários compartilhados), `apac_mag_*.py` (domínio e orquestração) e `ui/` (interface) são camadas separadas, com dependência em sentido único. O caminho de geração do TXT é exclusivamente `apac_mag_gerador.py`.
+- Camadas com dependência em um só sentido, verificada por teste (`tests/test_arquitetura.py`): `core` e `paths` na base; `config`, `reference`, `layout`, `validation`, `remittance` e `cards` no meio; `services` (casos de uso sem Tk) e `ui` no topo. Detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md). O caminho de geração do TXT é exclusivamente `penna.layout`.
 - Base ausente desativa a regra correspondente, nunca gera falso positivo. A interface informa quantas regras foram desativadas na validação.
 - Configuração é lida no momento do uso, sem estado global na importação dos módulos.
 - Validação e geração executam em thread própria, com indicador de progresso.
@@ -150,7 +150,7 @@ Edite o arquivo em um editor de texto e reabra o programa. A gravação feita pe
 
 ## Colunas da planilha
 
-O conversor lê as colunas canônicas do APAC-MAG, com os nomes exatos abaixo (contrato `COLUNAS_PLANILHA`, em `apac_mag_gerador.py`):
+O conversor lê as colunas canônicas do APAC-MAG, com os nomes exatos abaixo (contrato `COLUNAS_PLANILHA`, em `src/penna/layout/columns.py`):
 
 ```
 Numero_Apac, Numero_Apac_Anterior, Competencia, Tipo_Atendimento,
@@ -186,7 +186,7 @@ O validador bloqueia a exportação (ERR) quando há:
 - idade máxima do procedimento excedida;
 - quantidade zero no procedimento principal da APAC mãe.
 
-Geram apenas aviso (AVS): texto acima da largura do layout (será truncado), reenvio de APAC presente no histórico (010084) e as regras SIGTAP ainda sem confirmação do comportamento oficial (códigos 000006 a 000009, 010040 e 010041: secundário obrigatório, sexo, quantidade máxima, par principal/secundário e CID). A constante `SEVERIDADE_HIPOTESE`, em `apac_mag_validador.py`, promove essas regras a ERR quando forem confirmadas.
+Geram apenas aviso (AVS): texto acima da largura do layout (será truncado), reenvio de APAC presente no histórico (010084) e as regras SIGTAP ainda sem confirmação do comportamento oficial (códigos 000006 a 000009, 010040 e 010041: secundário obrigatório, sexo, quantidade máxima, par principal/secundário e CID). A constante `SEVERIDADE_HIPOTESE`, em `src/penna/validation/catalog.py`, promove essas regras a ERR quando forem confirmadas.
 
 Quando uma base (S_CEP, S_PA, S_PAPA, S_PAHA, S_CID, S_PAREGR) não está disponível, a interface informa quantas regras foram desativadas na validação e quais. O catálogo S_PA utiliza a versão vigente na competência da planilha.
 
@@ -200,22 +200,25 @@ As tabelas SIGTAP ficam em `dados/bases_sia/` (S_PA, S_PAPA, S_PAHA, S_PAREGR, S
 
 ```
 PENNA_CONVERSOR/
-|-- apac_mag_gui.py               Ponto de entrada da interface
-|-- apac_mag_gerador.py           Motor fiscal: Excel -> TXT APAC-MAG
-|-- apac_mag_validador.py         Gate de consistência (RCONSIST e SIGTAP)
-|-- apac_mag_remessa.py           Ciclo de remessa (RELEXP, R0201 e histórico)
-|-- apac_mag_fichas.py            Fichas do paciente em PDF
-|-- apac_mag_bases.py             Leitor DBF/ZBF das bases SIA (com cache)
-|-- apac_mag_sigtap_download.py   Download das bases SIGTAP (FTP DATASUS)
-|-- apac_mag/                     Configuração e normalização compartilhadas
-|-- ui/                           Interface (theme, components, app)
+|-- src/penna/
+|   |-- paths.py                  Pastas e recursos (código-fonte e executável)
+|   |-- core/                     Texto, datas, identificadores, competência
+|   |-- config/                   penna_config.json: fábrica, carga, gate, gravação
+|   |-- reference/                Tabelas SIA/SIGTAP (DBF/ZBF) e download do SIGTAP
+|   |-- layout/                   TXT fiscal: ApacBody, blocos, cabeçalho, arquivo
+|   |-- validation/               Motor de regras de consistência (RCONSIST)
+|   |-- remittance/               Remessa, histórico, comprovante e demonstrativo
+|   |-- cards/                    Fichas do paciente em PDF
+|   |-- services/                 Casos de uso sem interface
+|   |-- ui/                       Janela, widgets e tarefas em segundo plano
+|   `-- __main__.py               python -m penna
 |-- dados/
 |   |-- bases_sia/                Bases SIGTAP versionadas
 |   `-- modelo_ficha_*.xlsx       Modelo da ficha em PDF
-|-- docs/LGPD.md                  Dados pessoais, local e retenção
+|-- docs/                         ARQUITETURA.md e LGPD.md
 |-- tests/                        Testes (unittest) e fixtures
 |-- penna_config.example.json     Modelo de configuração
-|-- pyproject.toml                Configuração do ruff
+|-- pyproject.toml                Pacote instalável e configuração do ruff
 |-- .github/workflows/ci.yml      Integração contínua
 |-- Excel_Base.xlsx               Planilha-base
 |-- Conversor.spec                Build PyInstaller (arquivo único)
@@ -233,9 +236,9 @@ python -m unittest discover -s tests
 ruff check .
 ```
 
-A suíte cobre o núcleo de conversão, validador, parser SIGTAP, remessa, fichas, configuração, interface e o fluxo Excel para TXT/PDF. Inclui um arquivo de referência anonimizado (`tests/fixtures/apac_referencia.txt`) que valida byte a byte o cabeçalho e os blocos 14, 06 e 13. Os testes de interface são ignorados quando o `tkinter` não está disponível.
+A suíte cobre o núcleo, o motor de validação, o parser SIGTAP, a remessa, as fichas, a configuração, os serviços, a interface e o fluxo Excel para TXT/PDF, além de um teste que impõe a direção das dependências entre pacotes. Arquivos de referência anonimizados em `tests/fixtures/` validam byte a byte o TXT (cabeçalho e blocos 14, 06 e 13), o comprovante e o demonstrativo. Os testes de interface são ignorados quando o `tkinter` não está disponível.
 
-Os testes usam apenas dados fictícios. Em um clone limpo, copie `penna_config.example.json` para `penna_config.json` antes de executá-los. O workflow de CI executa `unittest` e `ruff` a cada push.
+Os testes usam apenas dados fictícios. Em um clone limpo, rode `pip install -e .` e copie `penna_config.example.json` para `penna_config.json` antes de executá-los. O workflow de CI executa `unittest` e `ruff` a cada push.
 
 ## Privacidade e LGPD
 

@@ -8,8 +8,8 @@
 #   - icones (apac_icon.ico / .png / header)
 #   - penna_config.json (configuracao do estabelecimento; incluido no
 #     bundle so quando presente — o arquivo real nao e versionado)
-#   - pacote ui/         (theme, components, app — interface completa)
-#   - pacote penna/      (src/penna: config, core... resolvido via pathex)
+#   - pacote penna/      (src/penna, resolvido via pathex: core, config, reference,
+#     layout, validation, remittance, cards, services e ui)
 #   - dados/bases_sia/   (SIGTAP versionado: S_PA, S_PAPA, S_PAHA, S_CID,
 #     S_PAREGR, S_DEPARA, XUPSHA) — validador com regras SIGTAP ativas
 #   - dados/modelo_ficha_oci_oftalmologia.xlsx (template da ficha PDF)
@@ -21,7 +21,7 @@
 import os
 
 a = Analysis(
-    ['apac_mag_gui.py'],
+    ['src/penna/__main__.py'],
     pathex=['src', '.'],
     binaries=[],
     datas=[
@@ -39,8 +39,6 @@ a = Analysis(
         *([("penna_config.json", ".")]
           if os.path.exists(os.path.join(SPECPATH, "penna_config.json"))
           else []),
-        # Pacote ui/ completo
-        ('ui', 'ui'),
         # Bases SIGTAP versionadas (validador/remessa)
         ('dados/bases_sia/S_PA.DBF', 'dados/bases_sia'),
         ('dados/bases_sia/S_DEPARA.DBF', 'dados/bases_sia'),
@@ -53,16 +51,13 @@ a = Analysis(
         ('dados/modelo_ficha_oci_oftalmologia.xlsx', 'dados'),
     ],
     hiddenimports=[
-        # Submodulos importados dinamicamente / garantia de empacotamento
-        'penna.config',
-        'penna.core',
-        'ui.theme',
-        'ui.components',
-        'ui.app',
-        'apac_mag_validador',
-        'apac_mag_bases',
-        'apac_mag_remessa',
-        'apac_mag_fichas',
+        # O PyInstaller segue os imports do pacote penna (src/penna via pathex);
+        # estes garantem os pontos de entrada e os importados tardiamente.
+        'penna.ui.main',
+        'penna.ui.app',
+        'penna.remittance',
+        'penna.cards',
+        'penna.reference.sigtap',
     ],
     hookspath=[],
     hooksconfig={},

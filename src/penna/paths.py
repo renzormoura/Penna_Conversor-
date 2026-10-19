@@ -31,7 +31,7 @@ def executable_dir() -> Path:
 
 
 def user_data_dir() -> Path:
-    """Pasta gravável do usuário (``%LOCALAPPDATA%\PennaConversor``)."""
+    r"""Pasta gravável do usuário (``%LOCALAPPDATA%\PennaConversor``)."""
     base = os.environ.get("LOCALAPPDATA")
     return (Path(base) if base else Path.home()) / APP_DIRNAME
 
