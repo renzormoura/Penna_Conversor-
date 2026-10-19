@@ -52,7 +52,7 @@ from penna.validation import (
     resumo as resumo_ocorrencias,
 )
 from penna.config import ConfigInvalidaError, verificar_configuracao
-import apac_mag_fichas
+from penna import cards
 from penna import remittance
 
 from .theme import (
@@ -1003,7 +1003,7 @@ class PennaApp:
                 if quer_fichas:
                     # Uma ficha PDF por linha (layout da aba OCI do modelo)
                     progresso("Gerando as fichas em PDF…", f"{len(df)} paciente(s)")
-                    fichas = apac_mag_fichas.exportar_fichas(
+                    fichas = cards.exportar_fichas(
                         df, pasta_fichas, progresso=progresso)
                 return final, comprovante, demonstrativo, str(aviso_remessa), fichas
 

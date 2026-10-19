@@ -21,9 +21,9 @@ from unittest import mock
 
 import pandas as pd
 
-import apac_mag_fichas
-from apac_mag_fichas import (exportar_fichas, gerar_ficha_pdf, montar_ficha,
-                             nome_arquivo_ficha)
+from penna.cards import (_reportlab, constants, exportar_fichas, extras, gerar_ficha_pdf, montar_ficha,
+                         nome_arquivo_ficha, template)
+from penna.cards import text as cards_text
 
 
 def linha_modelo() -> dict:
@@ -147,7 +147,7 @@ class TestMontarFicha(unittest.TestCase):
                 continue
             self.assertTrue(
                 coluna in ficha["cobertos"]
-                or apac_mag_fichas._rotulo_coluna(coluna) + ":" in rotulos_extras,
+                or cards_text.rotulo_coluna(coluna) + ":" in rotulos_extras,
                 f"coluna {coluna} não aparece em nenhuma seção da ficha",
             )
 
@@ -258,13 +258,13 @@ class TestExportarFichas(unittest.TestCase):
             self.assertTrue(gerados[0].exists())
 
     def test_relata_ausencia_do_reportlab(self):
-        from apac_mag_fichas import _exigir_reportlab, _REPORTLAB
+        from penna.cards.pdf_text import exigir_reportlab
 
-        if _REPORTLAB:
-            _exigir_reportlab()  # não deve levantar
+        if _reportlab.REPORTLAB:
+            exigir_reportlab()  # não deve levantar
         else:  # pragma: no cover - só quando reportlab não instalado
             with self.assertRaises(RuntimeError):
-                _exigir_reportlab()
+                exigir_reportlab()
 
 
 try:
@@ -339,12 +339,12 @@ def textos_da_ficha(linha: dict) -> list[list[str]]:
         return canvas_falso
 
     with tempfile.TemporaryDirectory() as tmp:
-        with mock.patch.object(apac_mag_fichas._canvas, "Canvas", fabrica):
+        with mock.patch.object(_reportlab.canvas, "Canvas", fabrica):
             gerar_ficha_pdf(linha, Path(tmp) / "ficha.pdf")
     return canvases[0].paginas
 
 
-@unittest.skipUnless(apac_mag_fichas._REPORTLAB, "reportlab ausente")
+@unittest.skipUnless(_reportlab.REPORTLAB, "reportlab ausente")
 class TestSoOQueOPacienteTem(unittest.TestCase):
     """As listas fixas do modelo só trazem o que o paciente fez/recebeu.
 
@@ -355,7 +355,7 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
     # ------------------------------------------------------------------
     # procedimentos (tabela de secundários e consultas do encerramento)
     def test_procedimento_nao_realizado_sai_da_ficha(self):
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         ficha = montar_ficha(linha_modelo())
         # o paciente tem o Sec1 (02.11.06.023-2) e mais nada das listas
         feitas = {r for r, cod in modelo.proc_linhas
@@ -369,7 +369,7 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
                               f"linha {linha} sem procedimento ficou na ficha")
 
     def test_consulta_do_paciente_fica_e_a_outra_sai(self):
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         linha = linha_modelo()
         linha["Cod_Procedimento"] = "0301010072"      # 03.01.01.007-2
         ficha = montar_ficha(linha)
@@ -379,12 +379,12 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
             else:
                 self.assertIn(ref, ficha["ocultar"])
         # com uma consulta informada, o título/nota da seção continuam
-        self.assertNotIn(apac_mag_fichas._CONSULTAS_INI, ficha["ocultar"])
+        self.assertNotIn(constants.CONSULTAS_INI, ficha["ocultar"])
 
     def test_consulta_ausente_remove_titulo_e_nota_da_secao(self):
         ficha = montar_ficha(linha_modelo())     # sem consulta nenhuma
-        for ref in range(apac_mag_fichas._CONSULTAS_INI,
-                         apac_mag_fichas._CONSULTAS_FIM + 1):
+        for ref in range(constants.CONSULTAS_INI,
+                         constants.CONSULTAS_FIM + 1):
             self.assertIn(ref, ficha["ocultar"])
         desenhado = "\n".join(t for pagina in textos_da_ficha(linha_modelo())
                               for t in pagina)
@@ -402,7 +402,7 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
         self.assertIn("SEC2 COD PROCEDIMENTO:", rotulos)
 
     def test_pdf_nao_imprime_procedimento_que_nao_foi_feito(self):
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         feito = "021106023"
         desenhado = "\n".join(t for pagina in textos_da_ficha(linha_modelo())
                               for t in pagina)
@@ -418,12 +418,12 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
 
     # ------------------------------------------------------------- CIDs
     def test_tabela_de_cids_fica_so_com_o_cid_do_paciente(self):
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         ficha = montar_ficha(linha_modelo())     # H40 + causas H00 e H52
         paciente = {"H00", "H40", "H52"}
         esquerda = dict(modelo.cid_esq)
         direita = dict(modelo.cid_dir)
-        col_dir = apac_mag_fichas._CID_COL_DIR
+        col_dir = constants.CID_COL_DIR
         # o que continua na ficha: nem linha oculta, nem metade suprimida
         desenhados: set[str] = set()
         for ref in sorted(set(esquerda) | set(direita)):
@@ -439,7 +439,7 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
 
     def test_cid_fora_do_catalogo_nao_some_da_ficha(self):
         """CID que não está na tabela do modelo vai para os extras (não some)."""
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         linha = linha_modelo()
         linha["Cid_Princ"] = "Z999"
         linha["Cid_Causas_Assoc"] = ""
@@ -450,7 +450,7 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
         self.assertIn("CID PRINC:", rotulos)
 
     def test_pdf_nao_imprime_o_catalogo_de_cids(self):
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         do_paciente = {"H00", "H40", "H52"}
         desenhado = "\n".join(t for pagina in textos_da_ficha(linha_modelo())
                               for t in pagina)
@@ -462,7 +462,7 @@ class TestSoOQueOPacienteTem(unittest.TestCase):
                                  f"CID do catálogo saiu na ficha: {cod}")
 
 
-@unittest.skipUnless(apac_mag_fichas._REPORTLAB, "reportlab ausente")
+@unittest.skipUnless(_reportlab.REPORTLAB, "reportlab ausente")
 class TestFichaEmUmaPagina(unittest.TestCase):
     """A ficha inteira (formulário + OUTROS DADOS DA LINHA) sai em UMA página.
 
@@ -472,7 +472,7 @@ class TestFichaEmUmaPagina(unittest.TestCase):
     """
 
     def test_modelo_nao_quebra_mais_o_formulario(self):
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         self.assertEqual(modelo.paginas, [(1, modelo.linhas_total)])
 
     def test_pdf_tem_uma_unica_pagina(self):
@@ -486,13 +486,13 @@ class TestFichaEmUmaPagina(unittest.TestCase):
         self.assertIn("2025/08", desenhado)                # competência (extra)
 
     def test_escala_cabe_na_pagina_e_nunca_amplia(self):
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         ficha = montar_ficha(linha_modelo())
-        escala = apac_mag_fichas._escala_da_ficha(modelo, ficha)
+        escala = extras.escala_da_ficha(modelo, ficha)
         util_h = modelo.pagina[1] - modelo.margem_topo - modelo.margem_base
         altura = (modelo.altura_visivel(ficha["ocultar"])
-                  + apac_mag_fichas._EXTRA_GAP
-                  + apac_mag_fichas._altura_extras(ficha["extras"]))
+                  + extras.EXTRA_GAP
+                  + extras._altura_extras(ficha["extras"]))
         self.assertLessEqual(escala * altura, util_h + 0.5)
         self.assertLessEqual(escala, 1.0)
         self.assertGreater(escala, 0.9)     # praticamente em tamanho real
@@ -503,7 +503,7 @@ class TestFichaEmUmaPagina(unittest.TestCase):
         com tinta é escondida por isso."""
         from openpyxl.utils import get_column_letter
 
-        modelo = apac_mag_fichas.carregar_modelo()
+        modelo = template.carregar_modelo()
         ficha = montar_ficha(linha_modelo())
         sobre = ficha["sobrescritas"]
 
@@ -571,28 +571,28 @@ class TestBuscaDoModeloFrozen(unittest.TestCase):
     def test_acha_modelo_no_bundle_sem_nada_ao_lado(self):
         """Cenário do bug reportado: instalação só com o .exe (one-file) —
         o modelo vem embutido no bundle e DEVE ser encontrado lá."""
-        modelo = self.bundle / "dados" / apac_mag_fichas._NOME_TEMPLATE
+        modelo = self.bundle / "dados" / constants.NOME_TEMPLATE
         modelo.parent.mkdir()
         modelo.write_bytes(b"")
         with contextlib.ExitStack() as st:
             for patch in self._frozen():
                 st.enter_context(patch)
-            achado = apac_mag_fichas._achar_template()
+            achado = template.achar_template()
         self.assertEqual(achado, modelo)
 
     def test_modelo_ao_lado_do_exe_vence_o_bundle(self):
         """Padrão do penna_config.json: o que o cliente deixar/editar ao lado
         do .exe tem prioridade sobre o arquivo de fábrica no bundle."""
-        de_fabrica = self.bundle / "dados" / apac_mag_fichas._NOME_TEMPLATE
+        de_fabrica = self.bundle / "dados" / constants.NOME_TEMPLATE
         de_fabrica.parent.mkdir()
         de_fabrica.write_bytes(b"")
-        editado = self.exe_dir / "dados" / apac_mag_fichas._NOME_TEMPLATE
+        editado = self.exe_dir / "dados" / constants.NOME_TEMPLATE
         editado.parent.mkdir()
         editado.write_bytes(b"")
         with contextlib.ExitStack() as st:
             for patch in self._frozen():
                 st.enter_context(patch)
-            achado = apac_mag_fichas._achar_template()
+            achado = template.achar_template()
         self.assertEqual(achado, editado)
 
     def test_modelo_original_tambem_no_bundle(self):
@@ -604,7 +604,7 @@ class TestBuscaDoModeloFrozen(unittest.TestCase):
         with contextlib.ExitStack() as st:
             for patch in self._frozen():
                 st.enter_context(patch)
-            achado = apac_mag_fichas._achar_template_original()
+            achado = template.achar_template_original()
         self.assertEqual(achado, orig)
 
     def test_ordem_dos_candidatos_frozen(self):
@@ -612,7 +612,7 @@ class TestBuscaDoModeloFrozen(unittest.TestCase):
         with contextlib.ExitStack() as st:
             for patch in self._frozen():
                 st.enter_context(patch)
-            bases = apac_mag_fichas._bases_template()
+            bases = template.bases_template()
         self.assertEqual(bases[0], self.exe_dir.resolve())
         self.assertEqual(bases[1], self.bundle)
 

@@ -1,0 +1,316 @@
+{
+ "mapping": {
+  "_NOME_TEMPLATE": [
+   "constants",
+   "NOME_TEMPLATE"
+  ],
+  "_FOLHA": [
+   "constants",
+   "FOLHA"
+  ],
+  "_PREFIXO_ORIGINAL": [
+   "constants",
+   "PREFIXO_ORIGINAL"
+  ],
+  "_QUEBRA_PAGINA": [
+   "constants",
+   "_QUEBRA_PAGINA"
+  ],
+  "_NC": [
+   "constants",
+   "NC"
+  ],
+  "_CID_COL_DIR": [
+   "constants",
+   "CID_COL_DIR"
+  ],
+  "_CONSULTAS_INI": [
+   "constants",
+   "CONSULTAS_INI"
+  ],
+  "_CONSULTAS_FIM": [
+   "constants",
+   "CONSULTAS_FIM"
+  ],
+  "_TITULOS_SECAO": [
+   "constants",
+   "TITULOS_SECAO"
+  ],
+  "_PT_PX_COLUNA": [
+   "constants",
+   "PT_PX_COLUNA"
+  ],
+  "_PAD_COLUNA": [
+   "constants",
+   "PAD_COLUNA"
+  ],
+  "_FATOR_ALTURA": [
+   "constants",
+   "FATOR_ALTURA"
+  ],
+  "_CELULAS_DADOS": [
+   "constants",
+   "CELULAS_DADOS"
+  ],
+  "_SEXOS": [
+   "constants",
+   "SEXOS"
+  ],
+  "_RACAS": [
+   "constants",
+   "RACAS"
+  ],
+  "_TIPOS_LOGRADOURO": [
+   "constants",
+   "TIPOS_LOGRADOURO"
+  ],
+  "_CELULAS_COM_TEXTO_ORIGINAL": [
+   "constants",
+   "_CELULAS_COM_TEXTO_ORIGINAL"
+  ],
+  "_GRADE_COR": [
+   "constants",
+   "GRADE_COR"
+  ],
+  "_GRADE_ESP": [
+   "constants",
+   "GRADE_ESP"
+  ],
+  "_BORDA_ESP": [
+   "constants",
+   "BORDA_ESP"
+  ],
+  "_INSET": [
+   "constants",
+   "INSET"
+  ],
+  "_TEMA_MAPA": [
+   "constants",
+   "TEMA_MAPA"
+  ],
+  "_texto": [
+   "text",
+   "_texto"
+  ],
+  "formatar_procedimento": [
+   "text",
+   "formatar_procedimento"
+  ],
+  "_formatar_data": [
+   "text",
+   "formatar_data"
+  ],
+  "_formatar_cpf": [
+   "text",
+   "_formatar_cpf"
+  ],
+  "_formatar_competencia": [
+   "text",
+   "_formatar_competencia"
+  ],
+  "_formatar_cep": [
+   "text",
+   "formatar_cep"
+  ],
+  "_formatar": [
+   "text",
+   "formatar"
+  ],
+  "_rotulo_coluna": [
+   "text",
+   "rotulo_coluna"
+  ],
+  "_CACHE_PROC": [
+   "text",
+   "_CACHE_PROC"
+  ],
+  "_desc_procedimentos": [
+   "text",
+   "_desc_procedimentos"
+  ],
+  "_procedimento_completo": [
+   "text",
+   "procedimento_completo"
+  ],
+  "_nome_estabelecimento": [
+   "text",
+   "nome_estabelecimento"
+  ],
+  "_bases_template": [
+   "template",
+   "_bases_template"
+  ],
+  "_achar_template": [
+   "template",
+   "_achar_template"
+  ],
+  "_achar_template_original": [
+   "template",
+   "_achar_template_original"
+  ],
+  "_Modelo": [
+   "template",
+   "Modelo"
+  ],
+  "_MODELO": [
+   "template",
+   "_MODELO"
+  ],
+  "carregar_modelo": [
+   "template",
+   "carregar_modelo"
+  ],
+  "_aplicar_tint": [
+   "template",
+   "_aplicar_tint"
+  ],
+  "_caixa": [
+   "content",
+   "_caixa"
+  ],
+  "_caixa_do_codigo": [
+   "content",
+   "_caixa_do_codigo"
+  ],
+  "_rotulo_celula": [
+   "content",
+   "_rotulo_celula"
+  ],
+  "_montar_blocos": [
+   "content",
+   "_montar_blocos"
+  ],
+  "_linhas_em_branco": [
+   "content",
+   "_linhas_em_branco"
+  ],
+  "montar_ficha": [
+   "content",
+   "montar_ficha"
+  ],
+  "_RESERVADOS": [
+   "files",
+   "_RESERVADOS"
+  ],
+  "_seguro": [
+   "files",
+   "_seguro"
+  ],
+  "nome_arquivo_ficha": [
+   "files",
+   "nome_arquivo_ficha"
+  ],
+  "_FONTES_ARQUIVO": [
+   "pdf_text",
+   "_FONTES_ARQUIVO"
+  ],
+  "_FONTE_CACHE": [
+   "pdf_text",
+   "_FONTE_CACHE"
+  ],
+  "_fonte": [
+   "pdf_text",
+   "fonte"
+  ],
+  "_preparar_texto": [
+   "pdf_text",
+   "preparar_texto"
+  ],
+  "_exigir_reportlab": [
+   "pdf_text",
+   "exigir_reportlab"
+  ],
+  "_celula_padrao": [
+   "pdf_text",
+   "celula_padrao"
+  ],
+  "_medir": [
+   "pdf_text",
+   "medir"
+  ],
+  "_quebrar": [
+   "pdf_text",
+   "quebrar"
+  ],
+  "_desenhar_pagina": [
+   "page",
+   "desenhar_pagina"
+  ],
+  "_cabecalho_rodape": [
+   "page",
+   "cabecalho_rodape"
+  ],
+  "_EXTRA_TITULO_ALT": [
+   "extras",
+   "_EXTRA_TITULO_ALT"
+  ],
+  "_EXTRA_LINHA_ALT": [
+   "extras",
+   "_EXTRA_LINHA_ALT"
+  ],
+  "_EXTRA_GAP": [
+   "extras",
+   "EXTRA_GAP"
+  ],
+  "_altura_extras": [
+   "extras",
+   "_altura_extras"
+  ],
+  "_escala_da_ficha": [
+   "extras",
+   "escala_da_ficha"
+  ],
+  "_desenhar_extras": [
+   "extras",
+   "desenhar_extras"
+  ],
+  "gerar_ficha_pdf": [
+   "render",
+   "gerar_ficha_pdf"
+  ],
+  "exportar_fichas": [
+   "render",
+   "exportar_fichas"
+  ]
+ },
+ "rename": {
+  "_BORDA_ESP": "BORDA_ESP",
+  "_CELULAS_DADOS": "CELULAS_DADOS",
+  "_CID_COL_DIR": "CID_COL_DIR",
+  "_CONSULTAS_FIM": "CONSULTAS_FIM",
+  "_CONSULTAS_INI": "CONSULTAS_INI",
+  "_EXTRA_GAP": "EXTRA_GAP",
+  "_FATOR_ALTURA": "FATOR_ALTURA",
+  "_FOLHA": "FOLHA",
+  "_GRADE_COR": "GRADE_COR",
+  "_GRADE_ESP": "GRADE_ESP",
+  "_INSET": "INSET",
+  "_Modelo": "Modelo",
+  "_NC": "NC",
+  "_NOME_TEMPLATE": "NOME_TEMPLATE",
+  "_PAD_COLUNA": "PAD_COLUNA",
+  "_PREFIXO_ORIGINAL": "PREFIXO_ORIGINAL",
+  "_PT_PX_COLUNA": "PT_PX_COLUNA",
+  "_RACAS": "RACAS",
+  "_SEXOS": "SEXOS",
+  "_TEMA_MAPA": "TEMA_MAPA",
+  "_TIPOS_LOGRADOURO": "TIPOS_LOGRADOURO",
+  "_TITULOS_SECAO": "TITULOS_SECAO",
+  "_cabecalho_rodape": "cabecalho_rodape",
+  "_celula_padrao": "celula_padrao",
+  "_desenhar_extras": "desenhar_extras",
+  "_desenhar_pagina": "desenhar_pagina",
+  "_escala_da_ficha": "escala_da_ficha",
+  "_exigir_reportlab": "exigir_reportlab",
+  "_fonte": "fonte",
+  "_formatar": "formatar",
+  "_formatar_cep": "formatar_cep",
+  "_formatar_data": "formatar_data",
+  "_medir": "medir",
+  "_nome_estabelecimento": "nome_estabelecimento",
+  "_preparar_texto": "preparar_texto",
+  "_procedimento_completo": "procedimento_completo",
+  "_quebrar": "quebrar",
+  "_rotulo_coluna": "rotulo_coluna"
+ }
+}
