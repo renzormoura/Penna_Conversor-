@@ -24,7 +24,6 @@ Fontes oficiais (instalacao real C:\APAC e backups .ZBF decodificados):
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path

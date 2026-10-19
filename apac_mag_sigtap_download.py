@@ -55,7 +55,7 @@ _cache_lock = threading.Lock()
 
 def _dir_cache() -> Path:
     """Pasta onde os ZIPs baixados sao guardados para reuso offline."""
-    import os, sys
+    import sys
     if getattr(sys, "frozen", False):
         base = Path(sys.executable).resolve().parent
     else:

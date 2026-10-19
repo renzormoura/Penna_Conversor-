@@ -11,24 +11,30 @@ ui.theme. Pode ser testado sem instanciar janela, simulando root com mock.
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
 import sys
 import threading
 from pathlib import Path
 from urllib.parse import unquote
-from tkinter import BooleanVar, Button, Checkbutton, Entry, Frame, Label, StringVar, Tk, filedialog, messagebox
+from tkinter import BooleanVar, Button, Checkbutton, Entry, Frame, Label, StringVar, TclError, Tk, filedialog, messagebox
 
 try:
     import tkinter as tk
-except Exception:
+except ImportError:
     tk = None  # type: ignore
 
 try:
     from tkinterdnd2 import DND_FILES, TkinterDnD
-except Exception:
+except ImportError:
     DND_FILES = None   # type: ignore
     TkinterDnD = None  # type: ignore
+
+log = logging.getLogger("penna.ui")
+
+# Falhas esperadas de widget/thread Tk (janela destruida, fora do loop principal).
+_ERROS_TK = (TclError, RuntimeError)
 
 from apac_mag_gerador import (
     carregar_planilha,
@@ -378,7 +384,7 @@ class PennaApp:
         if self.embed:
             try:
                 TkinterDnD._require(self.root.winfo_toplevel())
-            except Exception:
+            except (*_ERROS_TK, AttributeError):
                 pass
         for target in (self.root, self.drop_label):
             try:
@@ -386,7 +392,7 @@ class PennaApp:
                 target.dnd_bind("<<Drop>>", self.on_drop)
                 target.dnd_bind("<<DragEnter>>", self.on_drag_enter)
                 target.dnd_bind("<<DragLeave>>", self.on_drag_leave)
-            except Exception:
+            except (*_ERROS_TK, AttributeError):
                 pass
 
     # ---------------------------------------------------------------------------
@@ -449,7 +455,7 @@ class PennaApp:
             texto += f" • {extensao[1:]}"
         try:
             header.set_competencia(texto)
-        except Exception:
+        except _ERROS_TK:
             pass
 
     def _sincronizar_sigtap_planilha(self, competencia: str) -> None:
@@ -466,7 +472,7 @@ class PennaApp:
         try:
             sel.sincronizar_com_planilha(competencia)
         except Exception:
-            pass
+            log.exception('falha ao sincronizar o seletor SIGTAP com a planilha')
 
     def _mostrar_painel_erros(self, ocorrencias) -> None:
         self._painel_erros = PainelErros(
@@ -495,7 +501,7 @@ class PennaApp:
         """Lê a competência escolhida no combobox (somente thread principal)."""
         try:
             return self.sigtap_sel.get_competencia()
-        except Exception:
+        except (*_ERROS_TK, AttributeError):
             return ""
 
     def _opcoes_exportacao(self) -> tuple:
@@ -507,7 +513,7 @@ class PennaApp:
         try:
             return (bool(self.var_exportar_txt.get()),
                     bool(self.var_exportar_fichas.get()))
-        except Exception:
+        except (*_ERROS_TK, AttributeError):
             return (True, False)
 
     @staticmethod
@@ -527,7 +533,7 @@ class PennaApp:
             from apac_mag_sigtap_download import listar_competencias_cache
             if competencia_planilha in listar_competencias_cache():
                 return competencia_planilha
-        except Exception:
+        except (ImportError, OSError):
             pass
         return ""
 
@@ -546,7 +552,7 @@ class PennaApp:
                     try:
                         self.root.iconbitmap(default=str(p))
                         break
-                    except Exception:
+                    except _ERROS_TK:
                         pass
             else:
                 continue
@@ -560,7 +566,7 @@ class PennaApp:
                         self._window_icon_photo = tk.PhotoImage(file=str(p))
                         self.root.iconphoto(True, self._window_icon_photo)
                         return
-                    except Exception:
+                    except _ERROS_TK:
                         pass
 
     # ---------------------------------------------------------------------------
@@ -602,13 +608,13 @@ class PennaApp:
         if header is not None:
             try:
                 header.set_competencia("")
-            except Exception:
+            except _ERROS_TK:
                 pass
         file_name = Path(file_path).name
         tamanho_str = ""
         try:
             tamanho_str = formatar_tamanho_bytes(os.path.getsize(file_path))
-        except Exception:
+        except OSError:
             pass
         # Relatório anterior é descartado e o sistema valida sozinho:
         # sem abrir painel para aviso, apenas em erro bloqueante.
@@ -617,7 +623,7 @@ class PennaApp:
         if self.drop_label is not None:
             try:
                 self.drop_label.set_state_loaded(file_name, tamanho_str)
-            except Exception:
+            except _ERROS_TK:
                 pass
         self.test_load()
 
@@ -629,6 +635,7 @@ class PennaApp:
             if self.file_var.get():
                 self._set_status("Caminho colado com sucesso.", tipo="sucesso")
         except Exception:
+            log.exception('falha ao colar o caminho da area de transferencia')
             messagebox.showwarning("Sem caminho", "Nenhum caminho válido na área de transferência.")
 
     def on_drop(self, event) -> str:
@@ -639,7 +646,7 @@ class PennaApp:
                 if w is not None and hasattr(w, "selection_get"):
                     try:
                         raw = w.selection_get()
-                    except Exception:
+                    except _ERROS_TK:
                         pass
             if not raw and len(sys.argv) > 1:
                 raw = " ".join(sys.argv[1:])
@@ -657,7 +664,7 @@ class PennaApp:
                 self.set_file(path)
                 return "break"
         except Exception:
-            pass
+            log.exception('falha ao tratar o arquivo solto na janela')
         messagebox.showwarning("Arquivo não aceito",
                                "Arraste um arquivo real do Explorer ou use Selecionar.")
         return "break"
@@ -683,7 +690,7 @@ class PennaApp:
         if overlay is not None:
             try:
                 overlay.fechar()
-            except Exception:
+            except _ERROS_TK:
                 pass
 
     def _iniciar_tarefa(self, titulo: str, detalhe: str, funcao, ao_concluir) -> None:
@@ -702,7 +709,7 @@ class PennaApp:
             try:
                 cb_antiga({"ok": False, "cancelada": True})
             except Exception:
-                pass
+                log.exception('callback da tarefa cancelada falhou')
 
         self._tarefa_seq += 1
         seq = self._tarefa_seq
@@ -724,11 +731,12 @@ class PennaApp:
                 valor = funcao(progresso)
                 holder.update({"fim": True, "ok": True, "valor": valor})
             except Exception as exc:
+                log.exception('tarefa em segundo plano falhou')
                 holder.update({"fim": True, "ok": False, "erro": exc})
 
         try:
             threading.Thread(target=runner, daemon=True, name="penna-tarefa").start()
-        except Exception as exc:
+        except RuntimeError as exc:
             # Sem thread não há como processar: devolve o erro imediatamente
             self._fechar_overlay()
             self._tarefa_cb = None
@@ -746,11 +754,11 @@ class PennaApp:
                     ultima_fase[0] = fase
                     try:
                         overlay.set_mensagem(fase[0], detalhe=fase[1])
-                    except Exception:
+                    except _ERROS_TK:
                         pass
                 try:
                     self.root.after(80, poll)
-                except Exception:
+                except _ERROS_TK:
                     pass
                 return
             self._fechar_overlay()
@@ -758,11 +766,12 @@ class PennaApp:
             try:
                 ao_concluir(holder)
             except Exception as exc:
+                log.exception('callback de conclusao da tarefa falhou')
                 self._set_status(f"Erro: {exc}", tipo="erro")
 
         try:
             self.root.after(80, poll)
-        except Exception:
+        except _ERROS_TK:
             pass
 
     # ---------------------------------------------------------------------------
@@ -894,7 +903,7 @@ class PennaApp:
                         defaultextension=extensao or ".txt",
                         initialfile=nome_saida_sugerido(excel_path, competencia),
                     )
-                except Exception as exc:
+                except (OSError, *_ERROS_TK) as exc:
                     self._conversao_ativa = False
                     self._set_status(f"Erro na conversão: {exc}", tipo="erro")
                     messagebox.showerror("Erro na conversão", f"Não foi possível gerar o TXT:\n{exc}")
@@ -913,7 +922,7 @@ class PennaApp:
                     pasta_fichas = filedialog.askdirectory(
                         title="Escolha a pasta para salvar as fichas (PDF)",
                     )
-                except Exception as exc:
+                except (OSError, *_ERROS_TK) as exc:
                     self._conversao_ativa = False
                     self._set_status(f"Erro na conversão: {exc}", tipo="erro")
                     messagebox.showerror("Erro na conversão",
@@ -1001,6 +1010,7 @@ class PennaApp:
                         comprovante = apac_mag_remessa.gerar_comprovante(resumo_remessa)
                         demonstrativo = apac_mag_remessa.gerar_demonstrativo(df)
                     except Exception as exc:
+                        log.exception('registro da remessa falhou (exportacao segue)')
                         # remessa nunca bloqueia a exportação — mas o erro é
                         # reportado ao usuário (vira aviso na mensagem final)
                         aviso_remessa = str(exc) or type(exc).__name__

@@ -26,7 +26,6 @@ except Exception:
     ImageTk = None  # type: ignore
 
 from .theme import (
-    COR_AZUL_ACTIVE,
     COR_AZUL_BORDA,
     COR_AZUL_DASH,
     COR_AZUL_HOVER,

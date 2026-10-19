@@ -265,7 +265,6 @@ class TestSincronizacaoNoFluxoReal(unittest.TestCase):
             app.var_exportar_txt.set(True)
             app.var_exportar_fichas.set(False)
             app._conversao_ativa = False
-            com_vazio = mock.Mock()
             with mock.patch.object(ui_app, "validar_planilha", return_value=[]), \
                  mock.patch.object(ui_app, "messagebox") as messagebox, \
                  mock.patch.object(ui_app.filedialog, "asksaveasfilename",

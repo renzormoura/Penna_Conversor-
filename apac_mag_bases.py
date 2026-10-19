@@ -23,6 +23,7 @@ from __future__ import annotations
 import os
 import struct
 import zipfile
+import zlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -73,14 +74,14 @@ def ler_dbf(data: bytes) -> Optional[List[Dict[str, str]]]:
             registros.append(valores)
             off += rlen
         return registros
-    except Exception:
-        return None
+    except (struct.error, ValueError, IndexError):
+        return None  # DBF truncado/corrompido: tabela indisponivel (regra desativada)
 
 
 def ler_arquivo_dbf(path: Path) -> Optional[List[Dict[str, str]]]:
     try:
         return ler_dbf(Path(path).read_bytes())
-    except Exception:
+    except OSError:
         return None
 
 
@@ -90,7 +91,8 @@ def ler_zbf(path: Path) -> Optional[List[Dict[str, str]]]:
         with zipfile.ZipFile(path) as z:
             nome = z.namelist()[0]
             return ler_dbf(z.read(nome))
-    except Exception:
+    except (zipfile.BadZipFile, OSError, IndexError, KeyError, RuntimeError,
+            NotImplementedError, zlib.error):
         return None
 
 
@@ -226,12 +228,11 @@ def _carregar_de_sigtap(
         return None
     try:
         from apac_mag_sigtap_download import carregar_sigtap_competencia
-        dados = carregar_sigtap_competencia(competencia)
-        if dados:
-            return dados.get(chave_sigtap)
-    except Exception:
-        pass
-    return None
+    except ImportError:
+        return None
+    # carregar_sigtap_competencia nao lanca por rede/ZIP invalido (devolve None)
+    dados = carregar_sigtap_competencia(competencia)
+    return dados.get(chave_sigtap) if dados else None
 
 
 def competencia_disponivel_local(competencia: str) -> bool:
