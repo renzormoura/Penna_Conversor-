@@ -1,0 +1,52 @@
+ ******************************************************************************
+ MS/SAS/DATASUS      SISTEMA DE INFORMACOES AMBULATORIAIS            DATA COMP.
+               DEMONSTRATIVO DE APAC MAGNETICO (PENNA)               
+ ******************************************************************************
+ NUMERO DO APAC: 332670000001-7                                       PAG.:    1
+
+ IDENTIFICACAO DA UPS/APAC
+ -------------------------
+
+ CODIGO DA UNIDADE:             123456-7
+ NOME/RAZAO SOCIAL UPS:         ESTABELECIMENTO EXEMPLO
+ INICIO DA VALIDADE DA APAC:    01/05/2026
+ FIM DA VALIDADE DO APAC:       30/06/2026
+ PROCEDIMENTO PRINCIPAL:        090501003-5
+ CNS DO PROFISSIONAL EXECUTANTE :     EQUIPE INE: 
+
+ IDENTIFICACAO DO PACIENTE
+ -------------------------
+
+ CPF: 123.456.789-09   PRONTUARIO: 
+ NOME:               JOÃO DA SILVA SAURO            
+ LOGRADOURO:         081-RUA DAS FLORES
+ ENDERECO:           RUA DAS FLORES                
+ NUMERO:             340               COMPLEMENTO: CASA 2
+ CEP:                26700-000                  BAIRRO: CENTRO
+ MUNICIPIO:          3550308 TEL.: (21)987654321
+ DATA DE NASCIMENTO: 15/06/1955                   SEXO: MASCULINO
+ UF DE NASCIMENTO OU NACIONALIDADE:           RACA: 01 BRANCA
+ NOME DA MAE: MARIA APARECIDA DA SILVA
+ NOME DO RES: JOÃO DA SILVA SAURO
+ E-MAIL: fulano@example.com
+ ------------------------------------------------------------------
+ C.I.D. PRINCIPAL         H40 
+        SECUNDARIO             
+ ------------------------------------------------------------------
+ MEDICO SOLICITANTE:
+ CPF:             NOME:   BELTRANO DE TAL
+ CNS: 700000000000002
+
+ PROCEDIMENTOS REALIZADOS:
+ -------------------------
+ CODIGO            PROCEDIMENTO        CBO.    QTD.
+ 090501003-5 OCI AVALIACAO INICIAL EM225265  0000001
+ 021106023-2                         225265  0000001
+ 021106010-0                         225265  0000002
+ ATENCAO : REGRA CONDICIONADA 0009: PROCEDIMENTO PRINCIPAL IMPEDE VALOR NOS SECUNDARIOS
+ MOTIVO DE SAIDA   : 11 / ALTA CURADO         
+
+ DATA DA OCORRENCIA: 30/06/2026
+
+ AUTORIZADOR:        CICRANO DE TAL
+ CNS: 700000000000003  COD.ORGAO EMISS.: M355030001

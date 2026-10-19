@@ -1,4 +1,4 @@
-"""Testes do ciclo da remessa (apac_mag_remessa): registro, comprovante,
+"""Testes do ciclo da remessa (penna.remittance): registro, comprovante,
 demonstrativo e o historico que alimenta o aviso oficial 010084."""
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import apac_mag_remessa as rem
+import penna.remittance as rem
+from penna.remittance import establishment
 
 
 def linha_base(**substituicoes):
@@ -111,7 +112,7 @@ class TestRegistro(unittest.TestCase):
 class TestComprovante(unittest.TestCase):
     def test_comprovante_no_formato_relexp(self):
         with tempfile.TemporaryDirectory() as pasta, \
-                mock.patch.object(rem, "_dados_estabelecimento",
+                mock.patch.object(establishment, "dados_estabelecimento",
                                   return_value=dict(_ESTABELECIMENTO_TESTE)):
             resumo = rem.calcular_resumo(_DF([linha_base()]))
             resumo.update({"arquivo": "APCEO26P.JUN", "tipo": "1", "pasta": pasta})

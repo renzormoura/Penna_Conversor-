@@ -27,7 +27,7 @@ class ContextoValidacao:
 
 
 def _historico(pasta_remessas: Optional[Path]) -> Set[str]:
-    from apac_mag_remessa import apacs_exportadas  # TODO fase 5: penna.remittance
+    from penna.remittance import apacs_exportadas  # lazy: remittance depende do layout
 
     return apacs_exportadas(pasta_remessas)
 

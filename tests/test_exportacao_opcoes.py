@@ -130,7 +130,7 @@ class TestExportacaoComOpcoes(unittest.TestCase):
                     mock.patch.object(ui_app.filedialog, "askdirectory",
                                       return_value=str(pasta_fichas)) as pasta, \
                     mock.patch.object(
-                        ui_app.apac_mag_remessa, "registrar_remessa",
+                        ui_app.remittance, "registrar_remessa",
                         side_effect=RuntimeError("remessa desativada no teste")):
                 app.run_conversion()
                 concluiu = self._esperar(

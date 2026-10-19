@@ -53,7 +53,7 @@ from penna.validation import (
 )
 from penna.config import ConfigInvalidaError, verificar_configuracao
 import apac_mag_fichas
-import apac_mag_remessa
+from penna import remittance
 
 from .theme import (
     COR_AZUL_ACTIVE,
@@ -991,9 +991,9 @@ class PennaApp:
                     progresso("Registrando a remessa…",
                               "comprovante, demonstrativo e histórico")
                     try:
-                        resumo_remessa = apac_mag_remessa.registrar_remessa(final, df)
-                        comprovante = apac_mag_remessa.gerar_comprovante(resumo_remessa)
-                        demonstrativo = apac_mag_remessa.gerar_demonstrativo(df)
+                        resumo_remessa = remittance.registrar_remessa(final, df)
+                        comprovante = remittance.gerar_comprovante(resumo_remessa)
+                        demonstrativo = remittance.gerar_demonstrativo(df)
                     except Exception as exc:
                         log.exception('registro da remessa falhou (exportacao segue)')
                         # remessa nunca bloqueia a exportação — mas o erro é
