@@ -1,0 +1,21 @@
+# Bases SIA versionadas (dados/bases_sia)
+
+Copias das tabelas do programa antigo APAC-MAG usadas pelo validador e pela
+remessa do PENNA. Origem: instalacao real `C:\APAC` (backup 202606 salvo pelo
+proprio antigo) e TXTCNES 202602. NAO editar a mao — regenerar com o script
+`atualizar_bases_sia.py` (Fase 3 do roadmap) a partir de um novo BDSIA.
+
+| Arquivo | Origem | Conteudo | Uso no PENNA |
+|---|---|---|---|
+| S_PA.DBF | C:/APAC/S_PA.DBF (PA_CMP 202605) | 3.220 procedimentos: idade min/max, sexo, CPF/CNS obrigatorios, qtd max, secundario obrigatorio, valor | regras 000016/000007/000008/000006, descricoes do demonstrativo |
+| S_PAHA.ZBF | C:/APAC/BACKUP/202606 | habilitacoes exigidas por procedimento (65.417 regs) | AVS 030008 real (com XUPSHA) |
+| XUPSHA.DBF | C:/APAC/TXTCNES/202602 | habilitacoes ativas do CNES 4234316 (HA 3801 desde 202409) | idem |
+| S_PAPA.ZBF | C:/APAC/BACKUP/202606 | pares principal->secundario permitidos + qtmax (4.084 regs) | regras 000008/000009 |
+| S_PAREGR.ZBF | C:/APAC/BACKUP/202606 | regras condicionadas por procedimento (19.888 regs) | regra 0009 (AVS 030009) + demonstrativo |
+| S_CID.ZBF | C:/APAC/BACKUP/202606 | CID validos com restricao de sexo (14.270 regs) | regras 010040/010041 |
+| S_DEPARA.DBF | C:/APAC/S_DEPARA.DBF | transicao de codigos descontinuados (5.576 regs) | proxima fatia: sugestao de codigo substituto |
+
+Nao versionado aqui (grande demais): S_CEP.DBF (24 MB) — continua lido de
+C:/APAC na execucao local, com override pela variavel PENNA_APAC_DIR.
+
+Versao BDSIA de referencia: 202605d (RELEXP.prn "Tabela : 202605d").

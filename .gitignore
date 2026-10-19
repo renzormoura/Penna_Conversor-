@@ -1,0 +1,50 @@
+# ===== Artefatos de build (regeneráveis) =====
+.venv/
+venv/
+build/
+dist/
+installer_output/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ===== Dados privados: estabelecimento / prestador =====
+# Config real com CGC, CNES e secretaria do usuário — não vai ao repo.
+# Para distribuir, crie um penna_config.example.json com valores fictícios.
+penna_config.json
+
+# ===== Histórico de remessa (contém dados de paciente) =====
+# TXT fiscal, comprovante e remessa.json por competência gerados em runtime.
+dados/remessas/
+Formatado/
+APCEO*.JUN
+APCEO*.txt
+*.PRN
+
+# ===== Cache de bases SIGTAP baixadas do DATASUS =====
+dados/sigtap_cache/
+
+# ===== PDFs/planilhas gerados com dados de paciente =====
+Temp/
+*.pdf
+
+# ===== Scripts de debug/ensaio soltos na raiz (não são testes do projeto) =====
+test_dbg.py
+test_gen.py
+test_gen2.py
+
+# ===== Ambiente e metadados locais =====
+penna.env
+.env
+.env.*
+.freebuff/
+
+# ===== SO / editor =====
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
