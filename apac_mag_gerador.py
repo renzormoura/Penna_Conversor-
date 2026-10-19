@@ -549,7 +549,9 @@ def exportar_txt(df: pd.DataFrame, caminho_saida: Path) -> pd.DataFrame:
         linhas.insert(0, _montar_header(linhas))
 
     texto = "".join(linha + "\r\n" for linha in linhas) + "\r\n"
-    caminho_saida.write_bytes(texto.encode("cp1252", errors="replace"))
+    # cp1252 estrito: o gate do validador ja barra o que nao codifica; se algo
+    # escapar, falha alto em vez de gravar '?' no lugar do dado.
+    caminho_saida.write_bytes(texto.encode("cp1252"))
     return df
 
 
