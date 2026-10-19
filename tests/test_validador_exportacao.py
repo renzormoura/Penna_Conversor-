@@ -1,4 +1,4 @@
-"""Testes do gate de consistencia pre-exportacao (apac_mag_validador).
+"""Testes do gate de consistencia pre-exportacao (penna.validation).
 
 O validador reproduz a checagem do programa antigo APAC-MAG: enquanto houver
 ocorrencia ERR o TXT nao pode ser gerado; AVS (aviso) e listado mas permite
@@ -10,7 +10,9 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
-import apac_mag_validador as v
+import penna.validation as v
+from penna.validation import lookups
+from penna.validation.model import Coletor
 
 
 def linha_base(**substituicoes):
@@ -41,7 +43,7 @@ def validar_linha(linha, ceps=None, pa=None):
             yield None, linha
 
     # CNES executante fixo do fixture, independente do penna_config.json local.
-    with mock.patch.object(v, "_cnes_padrao", return_value="4234316"):
+    with mock.patch.object(lookups, "cnes_padrao", return_value="4234316"):
         return v.validar_planilha(
             _DF(),
             base_ceps=ceps,
@@ -62,7 +64,7 @@ class TestFormatoRconsist(unittest.TestCase):
         )
 
     def test_seq_reinicia_por_apac(self):
-        coletor = v._Coletor()
+        coletor = Coletor()
         coletor.adicionar("202606", "3326703612353", "ERR", "", "000016", "X")
         coletor.adicionar("202606", "3326703612353", "ERR", "", "000016", "Y")
         coletor.adicionar("202606", "3326703612353", "ERR", "", "000016", "Z")
@@ -71,7 +73,7 @@ class TestFormatoRconsist(unittest.TestCase):
         self.assertEqual(seqs, ["000001", "000002", "000003", "000001"])
 
     def test_rotulos_textuais_corpo_habili_cnes(self):
-        coletor = v._Coletor()
+        coletor = Coletor()
         coletor.adicionar("202606", "3326703612353", "ERR", "CORPO", "010025", "DATA DE NASCIMENTO INVALIDA")
         coletor.adicionar("202606", "3326703612353", "AVS", "HABILI", "030008", "X")
         coletor.adicionar("202606", "3326703612353", "AVS", "CNES", "030001", "Y")

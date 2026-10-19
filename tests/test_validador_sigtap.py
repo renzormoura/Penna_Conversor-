@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import unittest
 
-import apac_mag_validador as v
+import penna.validation as v
 
 
 def linha_base(**substituicoes):

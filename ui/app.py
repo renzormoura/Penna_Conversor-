@@ -46,7 +46,7 @@ from penna.layout import (
     nome_saida_sugerido,
     normalize_output_name,  # noqa: F401 (re-exportado por apac_mag_gui)
 )
-from apac_mag_validador import (
+from penna.validation import (
     Ocorrencia,  # noqa: F401 — re-exported for external callers
     validar_planilha,
     resumo as resumo_ocorrencias,

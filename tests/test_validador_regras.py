@@ -5,7 +5,9 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
-import apac_mag_validador as v
+import penna.validation as v
+from penna.validation import lookups
+from penna import reference
 from tests.test_validador_sigtap import codigos, linha_base, validar
 
 
@@ -17,7 +19,7 @@ class TestCatalogoUsaCompetenciaDaPlanilha(unittest.TestCase):
     REGISTROS = [_s_pa("202605", "70"), _s_pa("202606", "80"), _s_pa("202607", "90")]
 
     def _catalogo(self, competencia):
-        with mock.patch.object(v.bases, "carregar_tabela", return_value=self.REGISTROS):
+        with mock.patch.object(reference, "carregar_tabela", return_value=self.REGISTROS):
             return v.carregar_catalogo_procedimentos(competencia)
 
     def test_usa_a_vigente_na_competencia_e_nunca_uma_futura(self):
@@ -29,12 +31,12 @@ class TestCatalogoUsaCompetenciaDaPlanilha(unittest.TestCase):
         self.assertIsNone(self._catalogo("202501"))
 
     def test_validar_planilha_passa_a_competencia_da_planilha(self):
-        with mock.patch.object(v.bases, "carregar_tabela", return_value=self.REGISTROS):
+        with mock.patch.object(reference, "carregar_tabela", return_value=self.REGISTROS):
             ocs = validar(linha_base(Competencia="202605", Data_Nascimento="19550615"),
                           catalogo_pa=None)
         # 70 anos no maximo na competencia 202605; a paciente tem 70 -> sem 000016
         self.assertNotIn("000016", codigos(ocs))
-        with mock.patch.object(v.bases, "carregar_tabela", return_value=[_s_pa("202605", "60"),
+        with mock.patch.object(reference, "carregar_tabela", return_value=[_s_pa("202605", "60"),
                                                                         _s_pa("202607", "130")]):
             ocs = validar(linha_base(Competencia="202606", Data_Nascimento="19550615"),
                           catalogo_pa=None)
@@ -89,9 +91,9 @@ class TestRegrasDesativadas(unittest.TestCase):
             def iterrows(self):
                 yield None, linha_base()
 
-        with mock.patch.object(v.bases, "carregar_tabela", return_value=None), \
-                mock.patch.object(v.bases, "carregar_habilitacoes_cnes", return_value=None), \
-                mock.patch.object(v, "carregar_base_ceps", return_value=None):
+        with mock.patch.object(reference, "carregar_tabela", return_value=None), \
+                mock.patch.object(reference, "carregar_habilitacoes_cnes", return_value=None), \
+                mock.patch.object(lookups, "carregar_base_ceps", return_value=None):
             return v.validar_planilha(_DF(), usar_remessa=False, **extra)
 
     def test_bases_ausentes_sao_listadas(self):

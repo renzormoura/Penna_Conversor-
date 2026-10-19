@@ -127,18 +127,18 @@ class TestSemEstadoGlobalNaImportacao(unittest.TestCase):
     """Trocar o config em runtime vale na proxima geracao/validacao."""
 
     def test_gerador_le_defaults_no_momento_do_uso(self):
-        import apac_mag_validador as v
+        from penna.validation import lookups
         base = json.loads(EXEMPLO.read_text(encoding="utf-8"))
         for cnes in ("7654321", "1111111"):
             base["defaults"]["Cnes_Executante"] = cnes
             with config_em(base):
                 self.assertIn(cnes, g.build_body_block({"Numero_Apac": "3326703612353"}))
-                self.assertEqual(v._cnes_padrao(), cnes)
+                self.assertEqual(lookups.cnes_padrao(), cnes)
 
     def test_sem_constantes_de_modulo_com_o_config(self):
-        import apac_mag_validador as v
+        from penna.validation import lookups
         for modulo, nomes in ((g, ("DEFAULT_VALUES", "HEADER_ORGAO_RESP", "HEADER_CGC")),
-                              (v, ("DEFAULT_VALUES", "_CNES_PADRAO"))):
+                              (lookups, ("DEFAULT_VALUES", "_CNES_PADRAO"))):
             for nome in nomes:
                 self.assertFalse(hasattr(modulo, nome), f"{modulo.__name__}.{nome}")
 

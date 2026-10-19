@@ -16,7 +16,8 @@ from pathlib import Path
 from unittest import mock
 
 from penna.reference import tables as bases_tables
-import apac_mag_validador as v
+import penna.validation as v
+from penna import reference
 from penna.core import resolve_row_value
 from penna.core.rows import _normalize_key
 
@@ -39,7 +40,7 @@ class TestCargaUnicaDoSidCid(unittest.TestCase):
         """20 linhas com CID conhecido: era 20 cargas de S_CID, agora 1."""
         linhas = [linha_base(Cid_Princ="H40") for _ in range(20)]
         with mock.patch.object(
-            v.bases, "carregar_tabela", wraps=v.bases.carregar_tabela
+            reference, "carregar_tabela", wraps=reference.carregar_tabela
         ) as espi:
             ocorrencias = v.validar_planilha(
                 _DF(linhas),
@@ -62,7 +63,7 @@ class TestCargaUnicaDoSidCid(unittest.TestCase):
         """cids_registros informado (formato dos testes): nenhuma carga."""
         linhas = [linha_base(Cid_Princ="N80", Sexo="M") for _ in range(5)]
         with mock.patch.object(
-            v.bases, "carregar_tabela", wraps=v.bases.carregar_tabela
+            reference, "carregar_tabela", wraps=reference.carregar_tabela
         ) as espi:
             ocorrencias = v.validar_planilha(
                 _DF(linhas),

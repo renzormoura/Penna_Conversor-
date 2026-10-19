@@ -20,3 +20,12 @@ HEADER_VERSAO_WIDTH = 12
 
 COMPETENCIA_INDEFINIDA = "000000"  # preserva a largura quando o mês não é identificável
 MAX_PROCEDIMENTOS_SECUNDARIOS = 9
+
+# Largura dos campos de texto do bloco 14 (coluna da planilha -> largura). Acima
+# disso o gerador trunca; o validador avisa (010092).
+LARGURA_TEXTO = {
+    "Nome_Paciente": 30, "Nome_Da_Mae": 30, "Nome_Do_Responsavel": 30, "Rua": 30,
+    "Numero_Endereco": 5, "Complemento": 10, "Bairro": 30, "Email": 40,
+    "Nome_Profissional": 30, "Autorizador_Nome": 30, "Cid_Causas_Assoc": 4,
+    "No_Prontuario": 10, "Cod_Orgao_Emiss": 10, "INE": 10, "Etnia": 4,
+}

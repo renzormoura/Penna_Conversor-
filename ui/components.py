@@ -306,7 +306,7 @@ class PainelErros(tk.Frame):
 
     def __init__(self, master, ocorrencias, ao_fechar=None, fonte_tamanho: int = 9) -> None:
         # Importação local para evitar dependência circular no nível de módulo
-        from apac_mag_validador import resumo as resumo_ocorrencias
+        from penna.validation import resumo as resumo_ocorrencias
 
         super().__init__(master, bg=COR_CARD,
                          highlightthickness=1, highlightbackground=COR_ERRO, bd=0)

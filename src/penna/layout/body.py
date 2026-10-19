@@ -22,7 +22,7 @@ from penna.core import (
     text_upper,
 )
 
-from .constants import BODY_WIDTH
+from .constants import BODY_WIDTH, LARGURA_TEXTO as L
 from .derived import apac_number, competence_from_row, ibge_code, numeric_field, uf_from_row
 
 Row = Dict[str, Any]
@@ -111,7 +111,7 @@ def _identificacao(row: Row, dfl: Defaults) -> Dict[str, str]:
         "tipo_atendimento": pad_left(resolve_row_value(row, "Tipo_Atendimento", "Tip_Atendimento") or "00", 2, "0"),
         "tipo_apac": pad_left(resolve_block_value(row, "Tipo_Apac", dfl["Tipo_Apac"]), 1, "0"),
         "cnes_solicitante": pad_left(resolve_block_value(row, "Cnes_Solicitante", cnes), 7, "0"),
-        "orgao_emissor": pad_right(resolve_block_value(row, "Cod_Orgao_Emiss", dfl["Cod_Orgao_Emiss"]), 10),
+        "orgao_emissor": pad_right(resolve_block_value(row, "Cod_Orgao_Emiss", dfl["Cod_Orgao_Emiss"]), L["Cod_Orgao_Emiss"]),
         "carater_atendimento": pad_left(resolve_block_value(row, "Carater_Atend", dfl["Carater_Atend"]), 2, "0"),
         "apac_anterior": pad_left(
             digits(resolve_block_value(row, "Numero_Apac_Anterior", dfl["Numero_Apac_Anterior"])) or "0", 13, "0"
@@ -122,11 +122,11 @@ def _identificacao(row: Row, dfl: Defaults) -> Dict[str, str]:
 
 
 def _paciente(row: Row) -> Dict[str, str]:
-    nome = _upper(row, "Nome_Paciente", 30)
+    nome = _upper(row, "Nome_Paciente", L["Nome_Paciente"])
     cns = digits(resolve_block_value(row, "Cns_Paciente", ""))
     return {
         "nome_paciente": nome,
-        "nome_mae": _upper(row, "Nome_Da_Mae", 30),
+        "nome_mae": _upper(row, "Nome_Da_Mae", L["Nome_Da_Mae"]),
         "data_nascimento": birth_date_to_txt(resolve_block_value(row, "Data_Nascimento", "")),
         # Largura 1: sem valor ocupa a posição com espaço para não deslocar o restante.
         "sexo": text_upper(resolve_block_value(row, "Sexo", ""))[:1] or " ",
@@ -136,13 +136,13 @@ def _paciente(row: Row) -> Dict[str, str]:
         # Responsável vazio: o antigo grava o nome do paciente (confirmado no arquivo real).
         "nome_responsavel": pad_right(
             text_upper(resolve_block_value(row, "Nome_Do_Responsavel") or resolve_block_value(row, "Nome_Paciente", "")),
-            30,
+            L["Nome_Do_Responsavel"],
         ),
         "uf_nascimento": pad_right(resolve_row_value(row, "Uf_Nascimento", "UF_Nascimento") or "010", 3),
-        "etnia": pad_right(resolve_block_value(row, "Etnia", ""), 4),
+        "etnia": pad_right(resolve_block_value(row, "Etnia", ""), L["Etnia"]),
         "cpf_paciente": numeric_field(resolve_block_value(row, "Cpf_Paciente", ""), 11),
         "situacao_rua": pad_right(text_upper(resolve_block_value(row, "Situacao_De_Rua", "") or "N"), 1),
-        "prontuario": pad_right(resolve_block_value(row, "No_Prontuario", ""), 10),
+        "prontuario": pad_right(resolve_block_value(row, "No_Prontuario", ""), L["No_Prontuario"]),
     }
 
 
@@ -155,18 +155,18 @@ def _endereco(row: Row) -> Dict[str, str]:
     telefone = re.sub(r"\D", "", resolve_block_value(row, "Telefone", ""))
     return {
         "endereco": pad_right(
-            text_upper(resolve_block_value(row, "Rua", resolve_block_value(row, "Logradouro", ""))), 30
+            text_upper(resolve_block_value(row, "Rua", resolve_block_value(row, "Logradouro", ""))), L["Rua"]
         ),
         # Número alinhado à ESQUERDA com espaços (arquivo real: '487  ').
-        "numero": pad_right(resolve_block_value(row, "Numero_Endereco", ""), 5),
-        "complemento": pad_right(resolve_block_value(row, "Complemento", ""), 10),
+        "numero": pad_right(resolve_block_value(row, "Numero_Endereco", ""), L["Numero_Endereco"]),
+        "complemento": pad_right(resolve_block_value(row, "Complemento", ""), L["Complemento"]),
         "cep": pad_left(resolve_block_value(row, "Cep", ""), 8, "0"),
         "ibge": ibge_code(row),
         "codigo_logradouro": pad_right(codigo_via or "", 3),
-        "bairro": _upper(row, "Bairro", 30),
+        "bairro": _upper(row, "Bairro", L["Bairro"]),
         "ddd": pad_left(telefone[:2], 2, "0") if telefone else "  ",
         "telefone": pad_left(telefone[-9:], 9, "0") if telefone else " " * 9,
-        "email": pad_right(resolve_block_value(row, "Email", ""), 40),
+        "email": pad_right(resolve_block_value(row, "Email", ""), L["Email"]),
     }
 
 
@@ -183,16 +183,16 @@ def _profissionais(row: Row, dfl: Defaults) -> Dict[str, str]:
         or digits(dfl.get("Cns_Executante", ""))
     )
     return {
-        "nome_solicitante": _upper(row, "Nome_Profissional", 30),
+        "nome_solicitante": _upper(row, "Nome_Profissional", L["Nome_Profissional"]),
         "cns_responsavel": _cns_obrigatorio(resolve_block_value(row, "Medico_Cns", "")),
         "cns_executante": pad_left(cns_exec, 15, "0") if cns_exec else "0" * 15,
-        "ine": pad_right(resolve_block_value(row, "INE", ""), 10),
+        "ine": pad_right(resolve_block_value(row, "INE", ""), L["INE"]),
     }
 
 
 def _autorizacao(row: Row) -> Dict[str, str]:
     return {
-        "nome_autorizador": _upper(row, "Autorizador_Nome", 30),
+        "nome_autorizador": _upper(row, "Autorizador_Nome", L["Autorizador_Nome"]),
         "cns_autorizador": _cns_obrigatorio(resolve_block_value(row, "Autorizador_Cns", "")),
         "data_solicitacao": date_to_txt(resolve_block_value(row, "Data_Solicitacao", "")),
         "data_autorizacao": date_to_txt(resolve_block_value(row, "Data_Autorizacao", "")),
@@ -204,7 +204,7 @@ def _atendimento(row: Row, dfl: Defaults) -> Dict[str, str]:
         "procedimento_principal": pad_left(resolve_block_value(row, "Cod_Procedimento", ""), 10, "0"),
         "motivo_saida": pad_left(resolve_block_value(row, "Motivo_Saida", dfl["Motivo_Saida"]), 2, "0"),
         "data_alta_obito": date_to_txt(resolve_block_value(row, "Data_Alta_Obito", "")),
-        "cid_causa": _upper(row, "Cid_Causas_Assoc", 4),
+        "cid_causa": _upper(row, "Cid_Causas_Assoc", L["Cid_Causas_Assoc"]),
     }
 
 
