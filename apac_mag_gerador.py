@@ -25,7 +25,7 @@ import pandas as pd
 # Helpers de string e configuração: fonte única de verdade
 # ---------------------------------------------------------------------------
 from apac_mag.normalization import (
-    date_to_ddmmaa,
+    date_to_txt,
     digits as _digits_fn,
     nascimento_to_aaaammdd,
     normalize_competence,
@@ -222,10 +222,10 @@ def build_block_01(row: Dict[str, Any]) -> str:
     data_emissao = resolve_row_value(row, "Data_Emissao")
     if not data_emissao:
         data_emissao = competence_from_row(row)[:6] + "01"
-    data_emissao = date_to_ddmmaa(data_emissao)
+    data_emissao = date_to_txt(data_emissao)
 
-    inicio = date_to_ddmmaa(resolve_block_value(row, "Inicio_Validade", ""))
-    fim = date_to_ddmmaa(resolve_block_value(row, "Fim_Validade", ""))
+    inicio = date_to_txt(resolve_block_value(row, "Inicio_Validade", ""))
+    fim = date_to_txt(resolve_block_value(row, "Fim_Validade", ""))
     tipo_atendimento = pad_left(resolve_row_value(row, "Tipo_Atendimento", "Tip_Atendimento") or "00", 2, "0")
     tipo = pad_left(resolve_block_value(row, "Tipo_Apac", dfl["Tipo_Apac"]), 1, "0")
     nome_paciente = pad_right(text_upper(resolve_block_value(row, "Nome_Paciente", "")), 30)
@@ -245,7 +245,7 @@ def build_block_01(row: Dict[str, Any]) -> str:
     nome_solicitante = pad_right(text_upper(resolve_block_value(row, "Nome_Profissional", "")), 30)
     codigo_proc = pad_left(resolve_block_value(row, "Cod_Procedimento", ""), 10, "0")
     codigo_cob = pad_left(resolve_block_value(row, "Motivo_Saida", dfl["Motivo_Saida"]), 2, "0")
-    data_correcao = date_to_ddmmaa(resolve_block_value(row, "Data_Alta_Obito", ""))
+    data_correcao = date_to_txt(resolve_block_value(row, "Data_Alta_Obito", ""))
     nome_diretor = pad_right(text_upper(resolve_block_value(row, "Autorizador_Nome", "")), 30)
 
     # CNS do paciente: brancos quando ausente (confirmado no APCEO26P.JUN)
@@ -258,8 +258,8 @@ def build_block_01(row: Dict[str, Any]) -> str:
     cid_causa = pad_right(text_upper(resolve_block_value(row, "Cid_Causas_Assoc", "")), 4)
     prontuario = pad_right(resolve_block_value(row, "No_Prontuario", ""), 10)
     cnes_solicitante = pad_left(resolve_block_value(row, "Cnes_Solicitante", cnes), 7, "0")
-    data_solic = date_to_ddmmaa(resolve_block_value(row, "Data_Solicitacao", ""))
-    data_aut = date_to_ddmmaa(resolve_block_value(row, "Data_Autorizacao", ""))
+    data_solic = date_to_txt(resolve_block_value(row, "Data_Solicitacao", ""))
+    data_aut = date_to_txt(resolve_block_value(row, "Data_Autorizacao", ""))
     codigo_orgao = pad_right(resolve_block_value(row, "Cod_Orgao_Emiss", dfl["Cod_Orgao_Emiss"]), 10)
     carater = pad_left(resolve_block_value(row, "Carater_Atend", dfl["Carater_Atend"]), 2, "0")
     apac_anterior = pad_left(

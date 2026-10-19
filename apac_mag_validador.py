@@ -35,6 +35,7 @@ import apac_mag_remessa
 
 # Helpers de string: fonte única em apac_mag.normalization
 from apac_mag.normalization import (
+    normalize_date,
     digits as _digits_fn,
     nascimento_to_aaaammdd,
     resolve_competence,
@@ -86,6 +87,7 @@ CATALOGO_CODIGOS: Dict[str, str] = {
     "010027": "RACA (nn) INVALIDA",
     "010032": "LOGRADOURO (nnn) INVALIDO",
     "010042": "DATA DE SOLICITACAO (dd/mm/aaaa) ANTERIOR A DATA DE NASCIMENTO(dd/mm/aaaa)",
+    "010090": "<CAMPO>: DATA INVALIDA (valor)  [regra local do Penna]",
     "010083": "DATA DE ENCERRAMENTO (dd/mm/aaaa) MAIOR QUE DATA DE FIM (dd/mm/aaaa)",
     "010084": "NUMERO APAC: ENCONTRADO NO HISTORICO DE APAC DO SITE",
     # ---- AVS (avisos; o antigo exporta mesmo com eles) ----
@@ -289,8 +291,9 @@ def _regras_condicionadas(
 # Helpers de dados da linha
 # ==============================================================================
 
-_DDMMAAAA = re.compile(r"^(\d{2})/(\d{2})/(\d{4})$")
-_ISO = re.compile(r"^(\d{4})-(\d{2})-(\d{2})")
+# Campos de data gravados no TXT (alem do nascimento, validado a parte).
+_CAMPOS_DATA_TXT = ("Inicio_Validade", "Fim_Validade", "Data_Solicitacao",
+                    "Data_Autorizacao", "Data_Alta_Obito", "Data_Emissao")
 
 
 def _data_real(aaaammdd: str) -> bool:
@@ -304,22 +307,8 @@ def _data_real(aaaammdd: str) -> bool:
 
 
 def _parse_data(valor: Any) -> str:
-    """Normaliza datas NAO-nascimento para AAAAMMDD ("" quando invalida)."""
-    texto = to_text(valor).strip()
-    if not texto:
-        return ""
-    m = _DDMMAAAA.match(texto)
-    if m:
-        candidato = f"{m.group(3)}{m.group(2)}{m.group(1)}"
-        return candidato if _data_real(candidato) else ""
-    m = _ISO.match(texto)
-    if m:
-        candidato = f"{m.group(1)}{m.group(2)}{m.group(3)}"
-        return candidato if _data_real(candidato) else ""
-    digitos = only_digits(texto, "")
-    if len(digitos) == 8:
-        return digitos if _data_real(digitos) else ""
-    return ""
+    """AAAAMMDD pela mesma normalizacao do gerador ("" quando invalida)."""
+    return normalize_date(valor)
 
 
 def _formatar_data(aaaammdd: str) -> str:
@@ -424,6 +413,13 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
     nasc_valida = _data_real(nasc)
     if not nasc_valida:
         coletor.adicionar(cmpt, num_apac, "ERR", "CORPO", "010025", "DATA DE NASCIMENTO INVALIDA")
+
+    # --- DATAS DO TXT: preenchida e invalida bloqueia (ERR 010090, regra local) ---
+    for campo in _CAMPOS_DATA_TXT:
+        bruto = resolve_row_value(row, campo)
+        if bruto and not _parse_data(bruto):
+            coletor.adicionar(cmpt, num_apac, "ERR", "CORPO", "010090",
+                              f"{campo.upper()}: DATA INVALIDA ({bruto})")
 
     # --- CEP (ERR 010022; base S_CEP.DBF do antigo) ---
     if ctx.get("base_ceps") is not None:

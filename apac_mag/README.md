@@ -11,7 +11,7 @@ A regra central do pacote: **nenhum módulo aqui conhece UI, I/O de disco ou det
 | Módulo | Responsabilidade |
 |---|---|
 | `config.py` | Carrega `penna_config.json` via `get_header()` e `get_defaults()`. Singleton com cache, fallback automático, sem exceção por arquivo ausente. |
-| `normalization.py` | **Fonte única de verdade** para todos os helpers de string: `text`, `digits`, `text_upper`, `pad_left`, `pad_right`, `resolve_row_value`, `date_to_ddmmaa`, `nascimento_to_aaaammdd`, `normalize_cpf`, `normalize_cns`. Nenhum módulo do projeto redefine essas funções. |
+| `normalization.py` | **Fonte única de verdade** para todos os helpers de string: `text`, `digits`, `text_upper`, `pad_left`, `pad_right`, `resolve_row_value`, `date_to_txt`, `normalize_date`, `nascimento_to_aaaammdd`, `normalize_cpf`, `normalize_cns`. Nenhum módulo do projeto redefine essas funções. |
 | `models.py` | Dataclasses de domínio imutáveis e tipadas: `ApacRecord`, `PatientRecord`, `ProcedureRecord`. São os objetos canônicos que transitam entre camadas — nunca dicts soltos. |
 | `validation.py` | Validação estrutural leve de `ApacRecord` → `ValidationResult`. Verifica integridade antes da serialização, independente das regras SIGTAP. |
 | `serializers.py` | **Serialização OO canônica** de `ApacRecord` para blocos de layout fixo (tipo 14, 06, 13) via `serialize_apac()`. Fonte única de verdade para a montagem dos campos posicionais. |
