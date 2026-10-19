@@ -221,13 +221,21 @@ data de nascimento, raça, logradouro, CEP etc.).
 
 ##  Regras de consistência e bases SIGTAP
 
-O validador **bloqueia** (ERR) enquanto houver: APAC inválida/duplicada no
-histórico, data de nascimento inválida, CEP inexistente, raça ou logradouro
-inválidos, datas incoerentes, quantidade zero no procedimento principal da
-APAC MÃE, e as regras SIGTAP por competência (idade mín/máx, sexo,
-quantidade máxima, secundário obrigatório, par principal/secundário,
-habilitação no CNES, CID válido e restrição de sexo). Avisos (AVS) são
-listados e não bloqueiam.
+O validador **bloqueia** (ERR) enquanto houver: competência inválida ou mista,
+data de nascimento inválida, qualquer data do TXT preenchida e inválida
+(validade, solicitação, autorização, alta/óbito, emissão), CEP inexistente,
+raça ou logradouro inválidos, datas incoerentes, idade máxima do
+procedimento e quantidade zero no procedimento principal da APAC MÃE.
+
+As regras SIGTAP **sem confirmação do comportamento oficial** (códigos
+`(HIPOTESE)`: 000006 a 000009, 010040 e 010041 — secundário obrigatório,
+sexo, quantidade máxima, par principal/secundário e CID) **só avisam** (AVS)
+por enquanto; a constante `SEVERIDADE_HIPOTESE` em `apac_mag_validador.py`
+as promove a ERR quando confirmadas. Avisos (AVS) são listados e não
+bloqueiam; o reenvio de APAC do histórico (010084) também é AVS. Quando uma
+base (S_CEP, S_PA, S_PAPA, S_PAHA, S_CID, S_PAREGR) não está disponível, a
+tela informa "N regras desativadas nesta validação" e quais ficaram de fora.
+O catálogo S_PA usa a versão vigente na competência da planilha.
 
 As tabelas SIGTAP ficam em `dados/bases_sia/` (S_PA, S_PAPA, S_PAHA,
 S_PAREGR, S_CID, S_DEPARA, XUPSHA), são **versionadas no repositório** e

@@ -4,7 +4,7 @@ extras, S_CID) com bases sinteticas — deterministico, sem depender de C:/APAC.
 Os codigos com amostra oficial observada (000016, 000024, 010022, 010025,
 010027, 010032, 010042, 010083, 010084, 030001, 030008) continuam cobertos em
 test_validador_exportacao.py; aqui entram as novas familias HIPOTESE (000006,
-000007, 000008, 000009, 010040, 010041) e a regra condicionada 0009.
+000007, 000008, 000009, 010040, 010041; AVS ate haver confirmacao oficial) e a regra condicionada 0009.
 """
 from __future__ import annotations
 
@@ -64,7 +64,7 @@ class TestSecundarioObrigatorio(unittest.TestCase):
         ocs = validar(linha_base(), catalogo_pa=pa)
         self.assertIn("000006", codigos(ocs))
         alvo = [o for o in ocs if o.cod == "000006"][0]
-        self.assertEqual(alvo.tipo, "ERR")
+        self.assertEqual(alvo.tipo, "AVS")
         self.assertEqual(
             alvo.descricao,
             "PROC.(0905010035) EXIGE PELO MENOS (1) PROC. SECUNDARIO OBRIGATORIO.",
@@ -85,7 +85,7 @@ class TestParPrincipalSecundario(unittest.TestCase):
         ocs = validar(linha, pares_secundarios=self.PARES)
         alvo = [o for o in ocs if o.cod == "000009"]
         self.assertEqual(len(alvo), 1)
-        self.assertEqual(alvo[0].tipo, "ERR")
+        self.assertEqual(alvo[0].tipo, "AVS")
         self.assertEqual(
             alvo[0].descricao,
             "PROC. SECUNDARIO (0702010098) NAO PERMITIDO PARA O PROC. PRINCIPAL (0905010035)",
@@ -125,7 +125,7 @@ class TestSexoProcedimento(unittest.TestCase):
         ocs = validar(linha_base(Sexo="F"), catalogo_pa=pa)
         alvo = [o for o in ocs if o.cod == "000007"]
         self.assertEqual(len(alvo), 1)
-        self.assertEqual(alvo[0].tipo, "ERR")
+        self.assertEqual(alvo[0].tipo, "AVS")
         self.assertEqual(
             alvo[0].descricao,
             "PROC.(0905010035) NAO PERMITIDO PARA SEXO DO USUARIO",
@@ -171,7 +171,7 @@ class TestCid(unittest.TestCase):
         ocs = validar(linha_base(Cid_Princ="Z99"), cids_validos={"H40", "H26", "H52"})
         alvo = [o for o in ocs if o.cod == "010040"]
         self.assertEqual(len(alvo), 1)
-        self.assertEqual(alvo[0].tipo, "ERR")
+        self.assertEqual(alvo[0].tipo, "AVS")
         self.assertEqual(alvo[0].seq, "CORPO")
         self.assertEqual(alvo[0].descricao, "CID (Z99) NAO ENCONTRADO")
 

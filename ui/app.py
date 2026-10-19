@@ -154,6 +154,19 @@ def parse_dropped_path(raw_value) -> str:
     return _clean(candidates[0]) if candidates else ""
 
 
+def texto_regras_desativadas(regras) -> str:
+    """Aviso de validacao parcial ("" quando todas as regras rodaram).
+
+    Primeira linha = resumo curto (status); demais = quais regras ficaram de fora.
+    """
+    regras = list(regras or ())
+    if not regras:
+        return ""
+    plural = "regras desativadas" if len(regras) != 1 else "regra desativada"
+    return (f"{len(regras)} {plural} nesta validação (base ausente)."
+            + "\n" + "\n".join(f"• {r}" for r in regras))
+
+
 def convert_excel_to_txt(excel_path: Path, output_path: Path | None = None) -> Path:
     """Converte o Excel para TXT fiscal e retorna o caminho do arquivo gerado.
 
@@ -832,12 +845,15 @@ class PennaApp:
 
             df, competencia_planilha, ocorrencias = res["valor"]
             n_err, n_avs = resumo_ocorrencias(ocorrencias)
+            aviso_desativadas = texto_regras_desativadas(
+                getattr(ocorrencias, "regras_desativadas", ()))
 
             if n_err > 0:
                 self._montar_card_fluxo()
                 self._mostrar_painel_erros(ocorrencias)
                 self._set_status(
-                    f"Consistência reprovada: {n_err} erro(s), {n_avs} aviso(s). Nenhum arquivo gerado.",
+                    f"Consistência reprovada: {n_err} erro(s), {n_avs} aviso(s). Nenhum arquivo gerado."
+                    + (f" {aviso_desativadas.splitlines()[0]}" if aviso_desativadas else ""),
                     tipo="erro",
                 )
                 self._conversao_ativa = False
@@ -932,13 +948,15 @@ class PennaApp:
                 if fichas:
                     partes.append(f"{len(fichas)} ficha(s) PDF")
                 rotulo = " + ".join(partes) or "nenhum arquivo"
+                resumo_desativadas = (f" — {aviso_desativadas.splitlines()[0]}"
+                                      if aviso_desativadas else "")
                 if n_avs:
                     self._set_status(
-                        f"Exportação com {n_avs} aviso(s){rotulo_mes}: {rotulo}",
+                        f"Exportação com {n_avs} aviso(s){rotulo_mes}: {rotulo}{resumo_desativadas}",
                         tipo="sucesso",
                     )
                 else:
-                    self._set_status(f"Exportação gerada{rotulo_mes}: {rotulo}",
+                    self._set_status(f"Exportação gerada{rotulo_mes}: {rotulo}{resumo_desativadas}",
                                      tipo="sucesso")
 
                 mensagem = "Exportação concluída:"
@@ -963,6 +981,8 @@ class PennaApp:
                                  f"{pasta_fichas}")
                 if n_avs:
                     mensagem += f"\n\n{MSG_AVISOS.format(n_avs=n_avs)}"
+                if aviso_desativadas:
+                    mensagem += f"\n\n{aviso_desativadas}"
                 messagebox.showinfo("Exportação concluída", mensagem)
 
             def tarefa_exportar(progresso) -> tuple:
