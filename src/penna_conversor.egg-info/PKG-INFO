@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: penna-conversor
+Version: 1.0.0
+Summary: Conversor de planilhas Excel em TXT fiscal APAC-MAG (DATASUS/SIA)
+Requires-Python: >=3.10
+License-File: LICENSE.txt
+Requires-Dist: pandas==2.3.3
+Requires-Dist: openpyxl==3.1.5
+Requires-Dist: reportlab==5.0.1
+Requires-Dist: Pillow==11.3.0
+Requires-Dist: tkinterdnd2==0.6.3
+Dynamic: license-file

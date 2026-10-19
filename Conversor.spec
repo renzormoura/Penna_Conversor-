@@ -9,7 +9,7 @@
 #   - penna_config.json (configuracao do estabelecimento; incluido no
 #     bundle so quando presente — o arquivo real nao e versionado)
 #   - pacote ui/         (theme, components, app — interface completa)
-#   - pacote apac_mag/   (config, normalization)
+#   - pacote penna/      (src/penna: config, core... resolvido via pathex)
 #   - dados/bases_sia/   (SIGTAP versionado: S_PA, S_PAPA, S_PAHA, S_CID,
 #     S_PAREGR, S_DEPARA, XUPSHA) — validador com regras SIGTAP ativas
 #   - dados/modelo_ficha_oci_oftalmologia.xlsx (template da ficha PDF)
@@ -22,7 +22,7 @@ import os
 
 a = Analysis(
     ['apac_mag_gui.py'],
-    pathex=[],
+    pathex=['src', '.'],
     binaries=[],
     datas=[
         # Icones
@@ -34,15 +34,13 @@ a = Analysis(
         ('penna_header.png', '.'),
         # Configuracao do estabelecimento (so quando existe — o arquivo
         # real com dados do prestador nao e versionado; sem ele o app usa
-        # os valores de fabrica de apac_mag/config.py)
+        # os valores de fabrica de penna/config/factory.py)
         ("penna_config.example.json", "."),
         *([("penna_config.json", ".")]
           if os.path.exists(os.path.join(SPECPATH, "penna_config.json"))
           else []),
         # Pacote ui/ completo
         ('ui', 'ui'),
-        # Pacote apac_mag/ completo
-        ('apac_mag', 'apac_mag'),
         # Bases SIGTAP versionadas (validador/remessa)
         ('dados/bases_sia/S_PA.DBF', 'dados/bases_sia'),
         ('dados/bases_sia/S_DEPARA.DBF', 'dados/bases_sia'),
@@ -56,8 +54,8 @@ a = Analysis(
     ],
     hiddenimports=[
         # Submodulos importados dinamicamente / garantia de empacotamento
-        'apac_mag.config',
-        'apac_mag.normalization',
+        'penna.config',
+        'penna.core',
         'ui.theme',
         'ui.components',
         'ui.app',

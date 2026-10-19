@@ -24,10 +24,10 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # Helpers de string e configuração: fonte única de verdade
 # ---------------------------------------------------------------------------
-from apac_mag.normalization import (
+from penna.core import (
     date_to_txt,
     digits as _digits_fn,
-    nascimento_to_aaaammdd,
+    birth_date_to_txt,
     normalize_competence,
     pad_left,
     pad_right,
@@ -37,7 +37,7 @@ from apac_mag.normalization import (
     text,
     text_upper,
 )
-from apac_mag.config import get_defaults, get_header, get_versao, verificar_configuracao
+from penna.config import get_defaults, get_header, get_versao, verificar_configuracao
 
 # ---------------------------------------------------------------------------
 # Constantes de layout (imutáveis — não dependem de configuração)
@@ -188,7 +188,7 @@ def build_block_01(row: Dict[str, Any]) -> str:
     complemento = pad_right(resolve_block_value(row, "Complemento", ""), 10)
     cep = pad_left(resolve_block_value(row, "Cep", ""), 8, "0")
     ibge = _ibge_code(row)
-    data_nasc = nascimento_to_aaaammdd(resolve_block_value(row, "Data_Nascimento", ""))
+    data_nasc = birth_date_to_txt(resolve_block_value(row, "Data_Nascimento", ""))
     # Sexo tem largura fixa 1: sem valor, ocupa a posição com espaço para não
     # deslocar os campos seguintes da linha.
     sexo = text_upper(resolve_block_value(row, "Sexo", ""))[:1] or " "

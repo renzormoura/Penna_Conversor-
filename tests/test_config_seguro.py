@@ -11,7 +11,7 @@ from unittest import mock
 
 import pandas as pd
 
-import apac_mag.config as config
+from penna.config import settings as config
 import apac_mag_gerador as g
 
 EXEMPLO = Path(__file__).resolve().parent.parent / "penna_config.example.json"

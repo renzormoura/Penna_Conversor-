@@ -32,18 +32,18 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Union
 import apac_mag_bases as bases
 import apac_mag_remessa
 
-# Helpers de string: fonte única em apac_mag.normalization
-from apac_mag.normalization import (
+# Helpers de string: fonte única em penna.core
+from penna.core import (
     normalize_date,
     digits as _digits_fn,
-    nascimento_to_aaaammdd,
+    birth_date_to_txt,
     resolve_competence,
     resolve_row_value,
     text,
     text_upper,
 )
 # Configuração do estabelecimento (defaults e CNES padrão, lidos no uso)
-from apac_mag.config import get_defaults
+from penna.config import get_defaults
 
 
 # Aliases de retrocompatibilidade (outros módulos importavam estes nomes)
@@ -471,7 +471,7 @@ def _validar_linha(row: Dict[str, Any], coletor: _Coletor, ctx: Dict[str, Any]) 
                           f"CNES EXECUTANTE({cnes7}) NAO ENCONTRADO")
 
     # --- DATA DE NASCIMENTO (ERR 010025) ---
-    nasc = nascimento_to_aaaammdd(resolve_row_value(row, "Data_Nascimento", ""))
+    nasc = birth_date_to_txt(resolve_row_value(row, "Data_Nascimento", ""))
     nasc_valida = _data_real(nasc)
     if not nasc_valida:
         coletor.adicionar(cmpt, num_apac, "ERR", "CORPO", "010025", "DATA DE NASCIMENTO INVALIDA")

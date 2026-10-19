@@ -252,7 +252,7 @@ def _procedimento_completo(display: str, modelo_proc: Optional[str] = None) -> s
 def _nome_estabelecimento() -> str:
     """Nome do estabelecimento do penna_config.json (header.orgao_responsavel)."""
     try:
-        from apac_mag.config import get_header
+        from penna.config import get_header
 
         return _texto((get_header() or {}).get("orgao_responsavel", ""))
     except Exception:

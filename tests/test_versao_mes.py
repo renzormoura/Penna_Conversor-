@@ -15,7 +15,7 @@ import unittest
 from contextlib import contextmanager
 from pathlib import Path
 
-import apac_mag.config as config
+from penna.config import settings as config
 from apac_mag_gerador import _montar_header, build_patient_lines
 try:
     from ui.components import normalizar_versao

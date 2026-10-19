@@ -17,7 +17,8 @@ from unittest import mock
 
 import apac_mag_bases as bases
 import apac_mag_validador as v
-from apac_mag.normalization import _normalize_key, resolve_row_value
+from penna.core import resolve_row_value
+from penna.core.rows import _normalize_key
 
 from test_validador_sigtap import linha_base
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import unittest
 
 import apac_mag_gerador as g
-from apac_mag.normalization import normalize_date
+from penna.core import normalize_date
 from tests.test_validador_exportacao import linha_base, validar_linha
 
 CAMPOS = ["Inicio_Validade", "Fim_Validade", "Data_Solicitacao", "Data_Autorizacao",

@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - run: pip install pandas==2.3.3 openpyxl==3.1.5 reportlab==5.0.1 Pillow==11.3.0 tkinterdnd2==0.6.3
+      - run: pip install -e .
       # O penna_config.json real nao e versionado: os testes usam o modelo fictício.
       - run: Copy-Item penna_config.example.json penna_config.json
         shell: powershell

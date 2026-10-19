@@ -34,15 +34,15 @@ from apac_mag_gerador import (
     _competencia_header,
     build_patient_lines,
 )
-# Helpers de string: fonte única em apac_mag.normalization
-from apac_mag.normalization import (
+# Helpers de string: fonte única em penna.core
+from penna.core import (
     digits as _digits_fn,
     resolve_row_value,
     text,
     text_upper,
 )
 # Configuração do estabelecimento: lida do penna_config.json
-from apac_mag.config import get_header
+from penna.config import get_header
 import apac_mag_bases
 
 # Aliases de retrocompatibilidade e acesso lazy ao config

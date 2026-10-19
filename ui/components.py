@@ -984,7 +984,7 @@ class VersaoSelector(tk.Frame):
             self._lbl_dica.configure(text="mês ainda não identificado")
             return
         try:
-            from apac_mag.config import get_versao
+            from penna.config import get_versao
             efetiva = get_versao(comp)
         except Exception:
             efetiva = "—"

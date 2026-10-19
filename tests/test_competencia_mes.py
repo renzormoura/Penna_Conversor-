@@ -14,7 +14,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 
-from apac_mag.normalization import normalize_competence, resolve_competence
+from penna.core import normalize_competence, resolve_competence
 from apac_mag_gerador import (
     _montar_header,
     build_patient_lines,

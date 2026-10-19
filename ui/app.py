@@ -49,7 +49,7 @@ from apac_mag_validador import (
     validar_planilha,
     resumo as resumo_ocorrencias,
 )
-from apac_mag.config import ConfigInvalidaError, verificar_configuracao
+from penna.config import ConfigInvalidaError, verificar_configuracao
 import apac_mag_fichas
 import apac_mag_remessa
 
