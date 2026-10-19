@@ -148,7 +148,7 @@ def _caminhos_candidatos(nome: str, diretorio: Optional[Path]) -> List[Path]:
         return memo[1]
     candidatos: List[Path] = []
     for base in bases:
-        for sufixo in (".DBF", ".dbf"):
+        for sufixo in (".DBF", ".dbf", ".ZBF", ".zbf"):
             candidatos.append(base / (nome + sufixo))
         # backups mensais .ZBF (mais recente primeiro)
         if (base / "BACKUP").exists():
