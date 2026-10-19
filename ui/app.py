@@ -12,6 +12,7 @@ ui.theme. Pode ser testado sem instanciar janela, simulando root com mock.
 from __future__ import annotations
 
 import logging
+import logging.handlers
 import os
 import re
 import sys
@@ -1103,8 +1104,29 @@ ApacMagApp = PennaApp
 # Entry point standalone
 # ---------------------------------------------------------------------------
 
+def configurar_logging() -> None:
+    """Log em arquivo (o EXE nao tem console): %LOCALAPPDATA%\PennaConversor\penna.log.
+
+    Guarda so tracebacks de falhas inesperadas, com rotacao. Falha ao criar o
+    arquivo nunca impede o programa de abrir.
+    """
+    pasta = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "PennaConversor"
+    try:
+        pasta.mkdir(parents=True, exist_ok=True)
+        handler = logging.handlers.RotatingFileHandler(
+            pasta / "penna.log", maxBytes=512_000, backupCount=2, encoding="utf-8")
+    except OSError:
+        return
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    raiz = logging.getLogger("penna")
+    raiz.setLevel(logging.INFO)
+    if not any(isinstance(h, logging.handlers.RotatingFileHandler) for h in raiz.handlers):
+        raiz.addHandler(handler)
+
+
 def main() -> None:
     """Inicia o Penna em modo standalone (TkinterDnD quando disponível)."""
+    configurar_logging()
     root = TkinterDnD.Tk() if TkinterDnD is not None else Tk()
     app = PennaApp(root)
 
