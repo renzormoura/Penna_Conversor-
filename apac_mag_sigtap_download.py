@@ -186,125 +186,216 @@ def baixar_competencia(
 
 
 # ==============================================================================
-# Parsing dos TXTs para o formato dict do apac_mag_bases
+# Parsing dos TXTs para o MESMO esquema das tabelas DBF do APAC-MAG
+#
+# Contrato (o que apac_mag_validador le das tabelas DBF):
+#   - codigos de procedimento com 9 digitos, SEM o DV (o ZIP traz 10 com DV);
+#   - S_PA: PA_IDADEMN/PA_IDADEMX em ANOS (999 = sem limite; o SIGTAP traz
+#     MESES, 9999 = sem limite), PA_SEXO = M/F/A (SIGTAP: M/F/I),
+#     PA_QTDMAX, PA_SECOBRI, PA_DC (descricao);
+#   - S_CID: RESTRSEXO 1 = so masculino, 2 = so feminino, 5 = sem restricao
+#     (SIGTAP: M/F/I); inclui as categorias de 3 caracteres (o SIGTAP so
+#     lista subcategorias de 4, e o DBF tem as duas).
+# As posicoes vem do arquivo <tabela>_layout.txt do proprio ZIP quando
+# presente (Coluna,Tamanho,Inicio,Fim,Tipo); senao valem as padrao abaixo.
 # ==============================================================================
 
 def _ler_txt_zip(zf: zipfile.ZipFile, nome: str, encoding: str = "cp1252") -> List[str]:
-    """Le linhas de um arquivo TXT dentro do ZIP."""
+    """Le linhas de um arquivo TXT dentro do ZIP ([] se ausente/ilegivel)."""
     try:
         with zf.open(nome) as f:
             return f.read().decode(encoding, errors="replace").splitlines()
-    except Exception:
+    except (KeyError, OSError, zipfile.BadZipFile):
         return []
 
 
-def _parsear_regras_condicionadas(linhas: List[str], competencia: str) -> List[Dict[str, str]]:
-    """rl_procedimento_regra_cond.txt -> lista no formato S_PAREGR.
+Layout = Dict[str, tuple]  # coluna -> (inicio0, fim0) para fatiar a linha
 
-    Layout: CO_PROCEDIMENTO(10) CO_REGRA_CONDICIONADA(4)
-    Campos devolvidos: REG_PA, REG_REGRA, REG_CMP
-    """
+_LAYOUT_PADRAO: Dict[str, Layout] = {
+    "tb_procedimento": {
+        "CO_PROCEDIMENTO": (0, 10), "NO_PROCEDIMENTO": (10, 260),
+        "TP_SEXO": (261, 262), "QT_MAXIMA_EXECUCAO": (262, 266),
+        "VL_IDADE_MINIMA": (274, 278), "VL_IDADE_MAXIMA": (278, 282),
+        "DT_COMPETENCIA": (330, 336),
+    },
+    "tb_cid": {"CO_CID": (0, 4), "TP_SEXO": (105, 106)},
+    "rl_procedimento_compativel": {
+        "CO_PROCEDIMENTO_PRINCIPAL": (0, 10), "CO_PROCEDIMENTO_COMPATIVEL": (12, 22),
+        "QT_PERMITIDA": (25, 29), "DT_COMPETENCIA": (29, 35),
+    },
+    "rl_procedimento_habilitacao": {
+        "CO_PROCEDIMENTO": (0, 10), "CO_HABILITACAO": (10, 14), "DT_COMPETENCIA": (18, 24),
+    },
+    "rl_procedimento_regra_cond": {"CO_PROCEDIMENTO": (0, 10), "CO_REGRA_CONDICIONADA": (10, 14)},
+}
+
+
+def _ler_layout(zf: zipfile.ZipFile, tabela: str) -> Layout:
+    """Layout da tabela: <tabela>_layout.txt do ZIP sobre o padrao embutido."""
+    layout: Layout = dict(_LAYOUT_PADRAO[tabela])
+    alvo = f"{tabela}_layout.txt".lower()
+    for nome in zf.namelist():
+        if nome.lower().rsplit("/", 1)[-1] == alvo:
+            for linha in _ler_txt_zip(zf, nome):
+                partes = [p.strip() for p in linha.split(",")]
+                if len(partes) >= 4 and partes[2].isdigit() and partes[3].isdigit():
+                    layout[partes[0].upper()] = (int(partes[2]) - 1, int(partes[3]))
+            break
+    return layout
+
+
+def _tabela(zf: zipfile.ZipFile, tabela: str) -> tuple:
+    """(linhas, layout) de <tabela>.txt dentro do ZIP."""
+    return _ler_txt_zip(zf, f"{tabela}.txt"), _ler_layout(zf, tabela)
+
+
+def _campo(linha: str, layout: Layout, coluna: str) -> str:
+    ini, fim = layout[coluna]
+    return linha[ini:fim].strip()
+
+
+def _cod9(valor: str) -> str:
+    """Codigo de procedimento sem DV: '0905010035' -> '090501003'."""
+    digitos = re.sub(r"\D", "", valor)
+    return digitos[:9] if len(digitos) >= 10 else digitos
+
+
+def _idade_em_anos(meses: str) -> str:
+    """Idade do SIGTAP (meses; vazio/9999 = sem limite) -> anos do DBF (999)."""
+    if not meses.isdigit() or int(meses) >= 9999:
+        return "999"
+    return str(int(meses) // 12)
+
+
+def _sexo_pa(valor: str) -> str:
+    """TP_SEXO do procedimento: M/F/I(gnorado) -> M/F/A (como no S_PA)."""
+    valor = valor.upper()
+    return valor if valor in ("M", "F") else "A"
+
+
+def _sexo_cid(valor: str) -> str:
+    """TP_SEXO do CID: M/F/I(gnorado) -> 1/2/5 (como o RESTRSEXO do S_CID)."""
+    return {"M": "1", "F": "2"}.get(valor.upper(), "5")
+
+
+def _parsear_regras_condicionadas(
+    linhas: List[str], competencia: str, layout: Optional[Layout] = None
+) -> List[Dict[str, str]]:
+    """rl_procedimento_regra_cond.txt -> S_PAREGR (REG_PA, REG_REGRA, REG_CMP)."""
+    lay = layout or _LAYOUT_PADRAO["rl_procedimento_regra_cond"]
     registros = []
     for linha in linhas:
         if len(linha) < 14:
             continue
         registros.append({
-            "REG_PA":    linha[0:10].strip(),
-            "REG_REGRA": linha[10:14].strip(),
+            "REG_PA":    _cod9(_campo(linha, lay, "CO_PROCEDIMENTO")),
+            "REG_REGRA": _campo(linha, lay, "CO_REGRA_CONDICIONADA"),
             "REG_CMP":   competencia,
             "REG_CHKSM": "",
         })
     return registros
 
 
-def _parsear_pares_compativeis(linhas: List[str], competencia: str) -> List[Dict[str, str]]:
-    """rl_procedimento_compativel.txt -> lista no formato S_PAPA.
+def _parsear_pares_compativeis(
+    linhas: List[str], competencia: str, layout: Optional[Layout] = None
+) -> List[Dict[str, str]]:
+    """rl_procedimento_compativel.txt -> S_PAPA.
 
-    Layout:
-      CO_PROCEDIMENTO_PRINCIPAL(10) CO_REGISTRO_PRINCIPAL(2)
-      CO_PROCEDIMENTO_COMPATIVEL(10) CO_REGISTRO_COMPATIVEL(2)
-      TP_COMPATIBILIDADE(1) QT_PERMITIDA(4) DT_COMPETENCIA(6)
-
-    TP_COMPATIBILIDADE:
-      1 = principal/especial  2 = secundario (SIA)  outros = outros sistemas
-
-    Campos devolvidos: PAPA_PRINC, PAPA_SECUN, PAPA_QTMAX, PAPA_CMP
+    Layout: principal(10) registro(2) compativel(10) registro(2)
+    tp_compatibilidade(1) qt_permitida(4) competencia(6).
+    Campos: PAPA_PRINC, PAPA_SECUN (9 digitos), PAPA_QTMAX, PAPA_CMP.
     """
+    lay = layout or _LAYOUT_PADRAO["rl_procedimento_compativel"]
     registros = []
     for linha in linhas:
         if len(linha) < 35:
             continue
         # Aceita todos os tipos — o S_PAPA do APAC-MAG armazena todos os pares
         registros.append({
-            "PAPA_PRINC": linha[0:10].strip(),
-            "PAPA_SECUN": linha[12:22].strip(),
-            "PAPA_QTMAX": linha[25:29].strip(),
-            "PAPA_CMP":   linha[29:35].strip() or competencia,
+            "PAPA_PRINC": _cod9(_campo(linha, lay, "CO_PROCEDIMENTO_PRINCIPAL")),
+            "PAPA_SECUN": _cod9(_campo(linha, lay, "CO_PROCEDIMENTO_COMPATIVEL")),
+            "PAPA_QTMAX": _campo(linha, lay, "QT_PERMITIDA"),
+            "PAPA_CMP":   _campo(linha, lay, "DT_COMPETENCIA") or competencia,
         })
     return registros
 
 
-def _parsear_habilitacoes(linhas: List[str], competencia: str) -> List[Dict[str, str]]:
-    """rl_procedimento_habilitacao.txt -> lista no formato S_PAHA.
-
-    Layout: CO_PROCEDIMENTO(10) CO_HABILITACAO(4) NU_GRUPO_HABILITACAO(4) DT_COMPETENCIA(6)
-    Campos devolvidos: PAHA_PA, PAHA_HA, PAHA_CMP
-    """
+def _parsear_habilitacoes(
+    linhas: List[str], competencia: str, layout: Optional[Layout] = None
+) -> List[Dict[str, str]]:
+    """rl_procedimento_habilitacao.txt -> S_PAHA (PAHA_PA 9 digitos, PAHA_HA, PAHA_CMP)."""
+    lay = layout or _LAYOUT_PADRAO["rl_procedimento_habilitacao"]
     registros = []
     for linha in linhas:
         if len(linha) < 14:
             continue
         registros.append({
-            "PAHA_PA":  linha[0:10].strip(),
-            "PAHA_HA":  linha[10:14].strip(),
-            "PAHA_CMP": linha[18:24].strip() if len(linha) >= 24 else competencia,
+            "PAHA_PA":  _cod9(_campo(linha, lay, "CO_PROCEDIMENTO")),
+            "PAHA_HA":  _campo(linha, lay, "CO_HABILITACAO"),
+            "PAHA_CMP": _campo(linha, lay, "DT_COMPETENCIA") or competencia,
         })
     return registros
 
 
-def _parsear_procedimentos(linhas: List[str], competencia: str) -> List[Dict[str, str]]:
-    """tb_procedimento.txt -> lista no formato S_PA.
+def _parsear_procedimentos(
+    linhas: List[str], competencia: str, layout: Optional[Layout] = None
+) -> List[Dict[str, str]]:
+    """tb_procedimento.txt -> S_PA.
 
-    Layout relevante:
-      CO_PROCEDIMENTO(10) NO_PROCEDIMENTO(250) TP_COMPLEXIDADE(1)
-      TP_SEXO(1) QT_MAXIMA_EXECUCAO(4) QT_DIAS_PERMANENCIA(4)
-      QT_PONTOS(4) VL_IDADE_MINIMA(4) VL_IDADE_MAXIMA(4)
-      VL_SH(12) VL_SA(12) VL_SP(12) CO_FINANCIAMENTO(2)
-      CO_RUBRICA(6) QT_TEMPO_PERMANENCIA(4) DT_COMPETENCIA(6)
-    Campos devolvidos: PA_ID, PA_NOME, PA_SEXO, PA_QTMAX, PA_IDMIN, PA_IDMAX, PA_CMP
+    Campos: PA_ID (9 digitos), PA_DV, PA_DC, PA_SEXO (M/F/A), PA_QTDMAX,
+    PA_IDADEMN/PA_IDADEMX (ANOS; 999 = sem limite), PA_SECOBRI e PA_CMP.
+    PA_SECOBRI vem vazio: o SIGTAP nao traz o indicador "secundario
+    obrigatorio", e vazio mantem essa regra desativada (nunca falso positivo).
     """
+    lay = layout or _LAYOUT_PADRAO["tb_procedimento"]
+    minimo = max(fim for _, fim in lay.values())
     registros = []
     for linha in linhas:
-        if len(linha) < 336:
+        if len(linha) < minimo:
             continue
+        codigo = re.sub(r"\D", "", _campo(linha, lay, "CO_PROCEDIMENTO"))
         registros.append({
-            "PA_ID":    linha[0:10].strip(),
-            "PA_NOME":  linha[10:260].strip(),
-            "PA_SEXO":  linha[261:262].strip(),
-            "PA_QTMAX": linha[262:266].strip(),
-            "PA_IDMIN": linha[274:278].strip(),
-            "PA_IDMAX": linha[278:282].strip(),
-            "PA_CMP":   linha[330:336].strip() or competencia,
+            "PA_ID":      _cod9(codigo),
+            "PA_DV":      codigo[9:10],
+            "PA_DC":      _campo(linha, lay, "NO_PROCEDIMENTO"),
+            "PA_SEXO":    _sexo_pa(_campo(linha, lay, "TP_SEXO")),
+            "PA_QTDMAX":  _campo(linha, lay, "QT_MAXIMA_EXECUCAO") or "9999",
+            "PA_IDADEMN": _idade_em_anos(_campo(linha, lay, "VL_IDADE_MINIMA")),
+            "PA_IDADEMX": _idade_em_anos(_campo(linha, lay, "VL_IDADE_MAXIMA")),
+            "PA_SECOBRI": "",
+            "PA_CMP":     _campo(linha, lay, "DT_COMPETENCIA") or competencia,
         })
     return registros
 
 
-def _parsear_cids(linhas: List[str], competencia: str) -> List[Dict[str, str]]:
-    """tb_cid.txt -> lista no formato S_CID.
+def _parsear_cids(
+    linhas: List[str], competencia: str, layout: Optional[Layout] = None
+) -> List[Dict[str, str]]:
+    """tb_cid.txt -> S_CID (CD_COD, RESTRSEXO 1/2/5, CMP_INI, CMP_FIM).
 
-    Layout: CO_CID(4) NO_CID(100) TP_AGRAVO(1) TP_SEXO(1) TP_ESTADIO(1) ...
-    Campos devolvidos: CD_COD, RESTRSEXO, CMP_INI, CMP_FIM
+    O SIGTAP so lista subcategorias (4 caracteres, ex. A000); o DBF tambem
+    traz a categoria de 3 (A00). Ela e sintetizada aqui, sem restricao de
+    sexo, para CIDs de 3 caracteres da planilha nao virarem "nao encontrado".
     """
+    lay = layout or _LAYOUT_PADRAO["tb_cid"]
     registros = []
+    vistos = set()
     for linha in linhas:
-        if len(linha) < 105:
+        if len(linha) < 106:
+            continue
+        codigo = _campo(linha, lay, "CO_CID").upper()
+        if not codigo:
             continue
         registros.append({
-            "CD_COD":    linha[0:4].strip(),
-            "RESTRSEXO": linha[105:106].strip(),
+            "CD_COD":    codigo,
+            "RESTRSEXO": _sexo_cid(_campo(linha, lay, "TP_SEXO")),
             "CMP_INI":   "000000",
             "CMP_FIM":   "999999",
         })
+        vistos.add(codigo)
+    for codigo in sorted({c[:3] for c in vistos if len(c) == 4} - vistos):
+        registros.append({"CD_COD": codigo, "RESTRSEXO": "5",
+                          "CMP_INI": "000000", "CMP_FIM": "999999"})
     return registros
 
 
@@ -336,16 +427,16 @@ def carregar_sigtap_competencia(
 
     try:
         with zipfile.ZipFile(zip_path) as zf:
-            paregr = _parsear_regras_condicionadas(
-                _ler_txt_zip(zf, "rl_procedimento_regra_cond.txt"), competencia)
-            papa = _parsear_pares_compativeis(
-                _ler_txt_zip(zf, "rl_procedimento_compativel.txt"), competencia)
-            paha = _parsear_habilitacoes(
-                _ler_txt_zip(zf, "rl_procedimento_habilitacao.txt"), competencia)
-            s_pa = _parsear_procedimentos(
-                _ler_txt_zip(zf, "tb_procedimento.txt"), competencia)
-            s_cid = _parsear_cids(
-                _ler_txt_zip(zf, "tb_cid.txt"), competencia)
+            linhas, lay = _tabela(zf, "rl_procedimento_regra_cond")
+            paregr = _parsear_regras_condicionadas(linhas, competencia, lay)
+            linhas, lay = _tabela(zf, "rl_procedimento_compativel")
+            papa = _parsear_pares_compativeis(linhas, competencia, lay)
+            linhas, lay = _tabela(zf, "rl_procedimento_habilitacao")
+            paha = _parsear_habilitacoes(linhas, competencia, lay)
+            linhas, lay = _tabela(zf, "tb_procedimento")
+            s_pa = _parsear_procedimentos(linhas, competencia, lay)
+            linhas, lay = _tabela(zf, "tb_cid")
+            s_cid = _parsear_cids(linhas, competencia, lay)
     except Exception:
         return None
 
