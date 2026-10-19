@@ -32,12 +32,11 @@ import pandas as pd
 
 try:
     import tkinter as tk
-except Exception:  # pragma: sem cobertura
-    tk = None
-
-from ui import app as ui_app
-from ui.app import PennaApp
-from ui.components import SigtapSelector
+    from ui import app as ui_app
+    from ui.app import PennaApp
+    from ui.components import SigtapSelector
+except ImportError:  # sem tkinter: as classes de UI abaixo sao puladas
+    tk = ui_app = PennaApp = SigtapSelector = None
 
 
 def _esperar(condicao, root, timeout: float = 5.0) -> bool:
@@ -51,6 +50,7 @@ def _esperar(condicao, root, timeout: float = 5.0) -> bool:
     return condicao()
 
 
+@unittest.skipIf(tk is None, "tkinter indisponível")
 class TestResolverSigtap(unittest.TestCase):
     """_resolver_sigtap (thread-safe, sem UI): cache decide o mês."""
 
@@ -71,6 +71,7 @@ class TestResolverSigtap(unittest.TestCase):
                              "202601")
 
 
+@unittest.skipIf(tk is None, "tkinter indisponível")
 class TestSincronizacaoNaApp(unittest.TestCase):
     """PennaApp delega ao seletor sem derrubar a UI se ele faltar."""
 

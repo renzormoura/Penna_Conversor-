@@ -10,7 +10,10 @@ from __future__ import annotations
 
 import unittest
 
-from apac_mag_gui import parse_dropped_path
+try:
+    from apac_mag_gui import parse_dropped_path
+except ImportError as exc:  # sem tkinter
+    raise unittest.SkipTest(f"tkinter indisponível: {exc}")
 
 
 class ParseUncTests(unittest.TestCase):

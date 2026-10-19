@@ -25,11 +25,10 @@ import pandas as pd
 
 try:
     import tkinter as tk
-except Exception:  # pragma: sem cobertura
-    tk = None
-
-from ui import app as ui_app
-from ui.app import PennaApp
+    from ui import app as ui_app
+    from ui.app import PennaApp
+except ImportError:  # sem tkinter: as classes de UI abaixo sao puladas
+    tk = ui_app = PennaApp = None
 
 
 def linha_valida() -> dict:

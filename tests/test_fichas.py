@@ -267,6 +267,14 @@ class TestExportarFichas(unittest.TestCase):
                 _exigir_reportlab()
 
 
+try:
+    import tkinter  # noqa: F401
+    _TEM_TK = True
+except ImportError:
+    _TEM_TK = False
+
+
+@unittest.skipUnless(_TEM_TK, "tkinter indisponível")
 class TestOpcoesDeExportacao(unittest.TestCase):
     """A UI exporta somente o que foi marcado em OPÇÕES DE EXPORTAÇÃO."""
 
