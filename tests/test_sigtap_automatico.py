@@ -55,17 +55,17 @@ class TestResolverSigtap(unittest.TestCase):
     """_resolver_sigtap (thread-safe, sem UI): cache decide o mês."""
 
     def test_usa_mes_da_planilha_quando_zip_em_cache(self):
-        with mock.patch("apac_mag_sigtap_download.listar_competencias_cache",
+        with mock.patch("penna.reference.sigtap.listar_competencias_cache",
                         return_value=["202604"]):
             self.assertEqual(PennaApp._resolver_sigtap("", "202604"), "202604")
 
     def test_sem_zip_em_cache_devolve_vazio_para_fallback_local(self):
-        with mock.patch("apac_mag_sigtap_download.listar_competencias_cache",
+        with mock.patch("penna.reference.sigtap.listar_competencias_cache",
                         return_value=[]):
             self.assertEqual(PennaApp._resolver_sigtap("", "202604"), "")
 
     def test_escolha_manual_vence_o_cache(self):
-        with mock.patch("apac_mag_sigtap_download.listar_competencias_cache",
+        with mock.patch("penna.reference.sigtap.listar_competencias_cache",
                         return_value=["202604"]):
             self.assertEqual(PennaApp._resolver_sigtap("202601", "202604"),
                              "202601")

@@ -43,7 +43,7 @@ from penna.core import (
 )
 # Configuração do estabelecimento: lida do penna_config.json
 from penna.config import get_header
-import apac_mag_bases
+from penna import reference
 
 # Aliases de retrocompatibilidade e acesso lazy ao config
 def to_text(value: Any) -> str:
@@ -147,7 +147,7 @@ def _dados_estabelecimento() -> Dict[str, str]:
         "cnes": "",
     }
     try:
-        registros = apac_mag_bases.carregar_tabela("S_SS")
+        registros = reference.carregar_tabela("S_SS")
         if registros:
             ss = registros[0]
             dados["nome"] = (ss.get("SS_UFNOME") or dados["nome"]).strip().upper()
@@ -164,7 +164,7 @@ def _dados_estabelecimento() -> Dict[str, str]:
 def _descricoes_procedimentos() -> Dict[str, str]:
     desc: Dict[str, str] = {}
     try:
-        registros = apac_mag_bases.carregar_tabela("S_PA")
+        registros = reference.carregar_tabela("S_PA")
         if registros:
             for r in registros:
                 pid = (r.get("PA_ID") or "").strip()
@@ -179,7 +179,7 @@ def _regras_do_procedimento(procedimento9: str) -> List[str]:
     """Regras condicionadas registradas no S_PAREGR para o procedimento."""
     regras: List[str] = []
     try:
-        registros = apac_mag_bases.carregar_tabela("S_PAREGR")
+        registros = reference.carregar_tabela("S_PAREGR")
         if registros:
             for r in registros:
                 if (r.get("REG_PA") or "").strip() == procedimento9:

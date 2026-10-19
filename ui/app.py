@@ -531,7 +531,7 @@ class PennaApp:
         if not competencia_planilha:
             return ""
         try:
-            from apac_mag_sigtap_download import listar_competencias_cache
+            from penna.reference.sigtap import listar_competencias_cache
             if competencia_planilha in listar_competencias_cache():
                 return competencia_planilha
         except (ImportError, OSError):

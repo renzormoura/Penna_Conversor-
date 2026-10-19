@@ -29,7 +29,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Union
 
-import apac_mag_bases as bases
+from penna import reference as bases
 import apac_mag_remessa
 
 # Helpers de string: fonte única em penna.core
@@ -170,7 +170,7 @@ def resumo(ocorrencias: Iterable[Ocorrencia]) -> tuple:
 
 
 # ==============================================================================
-# Bases do programa antigo (via apac_mag_bases; ausencia desativa a regra)
+# Bases do programa antigo (via penna.reference; ausencia desativa a regra)
 # ==============================================================================
 
 _ceps_cache: Optional[Set[str]] = None

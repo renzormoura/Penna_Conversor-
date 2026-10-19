@@ -577,7 +577,7 @@ class SigtapSelector(tk.Frame):
 
     def _carregar_listas(self) -> None:
         try:
-            from apac_mag_sigtap_download import (
+            from penna.reference.sigtap import (
                 listar_competencias_ftp,
                 listar_competencias_cache,
             )
@@ -771,7 +771,7 @@ class SigtapSelector(tk.Frame):
         import threading
 
         def _worker():
-            from apac_mag_sigtap_download import baixar_competencia
+            from penna.reference.sigtap import baixar_competencia
 
             def _cb(recebidos: int, total: int) -> None:
                 if self._cancelado:

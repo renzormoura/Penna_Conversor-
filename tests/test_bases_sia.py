@@ -1,4 +1,4 @@
-"""Testes do modulo de bases SIA (apac_mag_bases).
+"""Testes do modulo de bases SIA (penna.reference).
 
 Os testes unitarios usam DBFs sinteticos gerados aqui (sem depender de
 C:/APAC); os de integracao rodam so quando as bases reais existirem.
@@ -11,7 +11,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-import apac_mag_bases as bases
+from penna import reference as bases
 
 
 def montar_dbf(campos, registros: list[dict]) -> bytes:

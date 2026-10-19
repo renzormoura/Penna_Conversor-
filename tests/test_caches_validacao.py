@@ -15,7 +15,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import apac_mag_bases as bases
+from penna import reference as bases
+from penna.reference import tables as bases_tables
 import apac_mag_validador as v
 from penna.core import resolve_row_value
 from penna.core.rows import _normalize_key
@@ -101,8 +102,8 @@ class TestCacheDeCaminhosCandidatos(unittest.TestCase):
     def test_memoriza_e_invalida_quando_aparece_backup(self):
         with tempfile.TemporaryDirectory() as tmp:
             pasta = Path(tmp)
-            primeira = bases._caminhos_candidatos("S_PA", pasta)
-            segunda = bases._caminhos_candidatos("S_PA", pasta)
+            primeira = bases_tables._caminhos_candidatos("S_PA", pasta)
+            segunda = bases_tables._caminhos_candidatos("S_PA", pasta)
             self.assertIs(primeira, segunda, "candidatos não memorizados")
 
             backup = pasta / "BACKUP" / "209901"
@@ -110,7 +111,7 @@ class TestCacheDeCaminhosCandidatos(unittest.TestCase):
             zbf = backup / "S_PA.ZBF"
             zbf.write_bytes(b"")
 
-            terceira = bases._caminhos_candidatos("S_PA", pasta)
+            terceira = bases_tables._caminhos_candidatos("S_PA", pasta)
             self.assertIsNot(terceira, primeira, "cache não invalidado")
             self.assertIn(zbf, terceira)
 
@@ -119,7 +120,7 @@ class TestCacheDeCaminhosCandidatos(unittest.TestCase):
             pasta = Path(tmp)
             dbf = pasta / "S_PA.DBF"
             dbf.write_bytes(b"")
-            candidatos = bases._caminhos_candidatos("S_PA", pasta)
+            candidatos = bases_tables._caminhos_candidatos("S_PA", pasta)
             self.assertEqual(candidatos[0], dbf)
 
 

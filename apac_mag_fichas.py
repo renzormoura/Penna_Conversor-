@@ -214,9 +214,9 @@ def _desc_procedimentos() -> Dict[str, str]:
         return _CACHE_PROC
     desc: Dict[str, str] = {}
     try:
-        import apac_mag_bases
+        from penna import reference
 
-        for r in apac_mag_bases.carregar_tabela("S_PA") or []:
+        for r in reference.carregar_tabela("S_PA") or []:
             pid = _texto(r.get("PA_ID"))
             if pid and pid not in desc:
                 desc[pid] = _texto(r.get("PA_DC"))

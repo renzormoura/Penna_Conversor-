@@ -7,7 +7,7 @@ import zipfile
 from pathlib import Path
 from unittest import mock
 
-import apac_mag_sigtap_download as sig
+from penna.reference.sigtap import store as sig
 from tests.test_validador_exportacao import linha_base, validar_linha
 
 COMP = "202606"

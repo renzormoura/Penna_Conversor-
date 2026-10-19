@@ -48,3 +48,5 @@ desktop.ini
 *~
 .idea/
 .vscode/
+src/*.egg-info/
+*.egg-info/
