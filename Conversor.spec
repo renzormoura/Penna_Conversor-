@@ -9,7 +9,7 @@
 #   - penna_config.json (configuracao do estabelecimento; incluido no
 #     bundle so quando presente — o arquivo real nao e versionado)
 #   - pacote ui/         (theme, components, app — interface completa)
-#   - pacote apac_mag/   (config, normalization, models, serializers, ...)
+#   - pacote apac_mag/   (config, normalization)
 #   - dados/bases_sia/   (SIGTAP versionado: S_PA, S_PAPA, S_PAHA, S_CID,
 #     S_PAREGR, S_DEPARA, XUPSHA) — validador com regras SIGTAP ativas
 #   - dados/modelo_ficha_oci_oftalmologia.xlsx (template da ficha PDF)

@@ -1,7 +1,7 @@
 """Funções puras de normalização e formatação de strings.
 
 Este módulo é a única fonte de verdade para helpers de string do projeto.
-Todos os outros módulos (gerador, validador, remessa, serializers) devem
+Todos os outros módulos (gerador, validador, remessa) devem
 importar daqui — nunca redefinir localmente.
 
 Regras:

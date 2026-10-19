@@ -42,7 +42,7 @@ from apac_mag.normalization import (
     text,
     text_upper,
 )
-# Configuração do estabelecimento (para DEFAULT_VALUES e CNES padrão)
+# Configuração do estabelecimento (defaults e CNES padrão, lidos no uso)
 from apac_mag.config import get_defaults
 
 
