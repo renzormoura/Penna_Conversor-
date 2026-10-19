@@ -139,3 +139,19 @@ class TestSemEstadoGlobalNaImportacao(unittest.TestCase):
                               (v, ("DEFAULT_VALUES", "_CNES_PADRAO"))):
             for nome in nomes:
                 self.assertFalse(hasattr(modulo, nome), f"{modulo.__name__}.{nome}")
+
+
+class TestSemCsvDeNumeracaoComDadosPessoais(unittest.TestCase):
+    def test_exportar_txt_nao_grava_csv_com_nome_e_cpf(self):
+        self.assertFalse(hasattr(g, "_salvar_numeracao_usada"))
+        csv = Path(g.__file__).resolve().parent / g.OUTPUT_FOLDER_NAME / "numeracao_apac_usada.csv"
+        existia = csv.exists()
+        antes = csv.stat().st_mtime if existia else None
+        with tempfile.TemporaryDirectory() as td, \
+                config_em(EXEMPLO.read_text(encoding="utf-8")):
+            g.exportar_txt(pd.DataFrame([{"Numero_Apac": "3326703612353",
+                                          "Nome_Paciente": "FULANO", "Cpf_Paciente": "1"}]),
+                           Path(td) / "saida.txt")
+        self.assertEqual(csv.exists(), existia)
+        if existia:
+            self.assertEqual(csv.stat().st_mtime, antes)
