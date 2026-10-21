@@ -28,6 +28,7 @@
  UF DE NASCIMENTO OU NACIONALIDADE:           RACA: 01 BRANCA
  NOME DA MAE: MARIA APARECIDA DA SILVA
  NOME DO RES: JOÃO DA SILVA SAURO
+ SITUACAO DE RUA: N
  E-MAIL: fulano@example.com
  ------------------------------------------------------------------
  C.I.D. PRINCIPAL         H40 

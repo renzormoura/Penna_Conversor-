@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from penna.core import digits, text
+from penna.core import digits, format_cpf, text
 
 
 def digitos(valor: Any, padrao: str = "") -> str:
@@ -29,8 +29,8 @@ def data(valor: Any) -> str:
 
 
 def cpf(valor: Any) -> str:
-    d = digitos(valor)
-    return f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}" if len(d) == 11 else text(valor)
+    """CPF formatado, completando o zero à esquerda que o Excel costuma comer."""
+    return format_cpf(valor)
 
 
 def cep(valor: Any) -> str:

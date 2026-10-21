@@ -73,6 +73,7 @@ def _paciente(serie: Row) -> List[str]:
         f" UF DE NASCIMENTO OU NACIONALIDADE: {text(serie.get('Uf_Nascimento')):<3}       RACA: {raca_cod} {formatting.RACA.get(raca_cod, '')}",
         f" NOME DA MAE: {text(serie.get('Nome_Da_Mae')).upper()[:30]}",
         f" NOME DO RES: {text(serie.get('Nome_Do_Responsavel') or serie.get('Nome_Paciente')).upper()[:30]}",
+        f" SITUACAO DE RUA: {(text(serie.get('Situacao_De_Rua')).upper()[:1] or 'N')}",
         f" E-MAIL: {text(serie.get('Email'))}",
         " ------------------------------------------------------------------",
         f" C.I.D. PRINCIPAL         {text(serie.get('Cid_Princ')).upper()[:4]} ",

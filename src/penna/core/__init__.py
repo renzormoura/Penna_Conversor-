@@ -9,7 +9,7 @@ from .competence import (
     resolve_competence,
 )
 from .dates import DATA_VAZIA, birth_date_to_txt, date_to_txt, is_real_date, normalize_date
-from .identifiers import normalize_cns, normalize_code, normalize_cpf
+from .identifiers import format_cpf, normalize_cns, normalize_code, normalize_cpf
 from .rows import resolve_block_value, resolve_row_value
 from .text import digits, pad_left, pad_right, text, text_upper
 
@@ -20,6 +20,7 @@ __all__ = [
     "birth_date_to_txt",
     "date_to_txt",
     "digits",
+    "format_cpf",
     "is_real_date",
     "normalize_cns",
     "normalize_code",

@@ -5,6 +5,7 @@ import re
 from typing import Any, Dict, Optional
 
 from penna import reference
+from penna.core import format_cpf as formatar_cpf
 from penna.config import get_header
 
 # ---------------------------------------------------------------------------
@@ -56,13 +57,6 @@ def formatar_data(valor: Any) -> str:
     return s
 
 
-def _formatar_cpf(valor: Any) -> str:
-    d = re.sub(r"\D", "", valor_texto(valor))
-    if len(d) == 11:
-        return f"{d[0:3]}.{d[3:6]}.{d[6:9]}-{d[9:11]}"
-    return valor_texto(valor)
-
-
 def _formatar_competencia(valor: Any) -> str:
     s = valor_texto(valor)
     return f"{s[:4]}/{s[4:]}" if re.match(r"^\d{6}$", s) else s
@@ -84,7 +78,7 @@ def formatar(coluna: str, valor: Any) -> str:
     if coluna.endswith("Cod_Procedimento"):
         return formatar_procedimento(v)
     if coluna in ("Cpf_Paciente", "Medico_Cpf", "Autorizador_Cpf"):
-        return _formatar_cpf(v)
+        return formatar_cpf(v)
     if coluna == "Competencia":
         return _formatar_competencia(v)
     if coluna == "Cep":

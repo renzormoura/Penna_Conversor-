@@ -20,7 +20,7 @@ PERMITIDO = {
     "layout": {"config", "core"},
     "validation": {"config", "core", "layout", "reference", "remittance"},
     "remittance": {"config", "core", "layout", "reference", "paths"},
-    "cards": {"config", "paths", "reference"},
+    "cards": {"config", "core", "paths", "reference"},
     "services": {"cards", "layout", "reference", "remittance", "validation"},
     "ui": {"config", "layout", "paths", "services", "validation", "reference"},
 }

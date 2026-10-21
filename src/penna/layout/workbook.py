@@ -13,6 +13,15 @@ from penna.core import resolve_competence
 from .columns import COLUNAS_PLANILHA
 
 
+def _sem_linhas_em_branco(df: pd.DataFrame) -> pd.DataFrame:
+    """Descarta linhas sem nenhum valor (só formatação no Excel).
+
+    O índice original é mantido: ``apacs_sem_numero`` e os relatórios apontam a linha do Excel.
+    """
+    preenchida = (df.astype(str).apply(lambda coluna: coluna.str.strip()) != "").any(axis=1)
+    return df[preenchida]
+
+
 def carregar_planilha(caminho: Path) -> pd.DataFrame:
     """Lê o Excel e garante todas as colunas esperadas, sempre como texto."""
     df = pd.read_excel(caminho, dtype=str, engine="openpyxl", keep_default_na=False)
@@ -22,7 +31,7 @@ def carregar_planilha(caminho: Path) -> pd.DataFrame:
     for coluna in get_defaults():
         if coluna in df.columns:
             df[coluna] = df[coluna].fillna("")
-    return df.fillna("")
+    return _sem_linhas_em_branco(df.fillna(""))
 
 
 def competencia_da_planilha(df: Any) -> str:
@@ -38,7 +47,7 @@ def competencia_da_planilha(df: Any) -> str:
 
 
 def apacs_sem_numero(df: pd.DataFrame) -> List[int]:
-    """Linhas (base 2, como no Excel) sem ``Numero_Apac`` válido.
+    """Linhas (número da linha do Excel) sem ``Numero_Apac`` válido.
 
     O gerador não inventa números: a numeração vem sempre da coluna. Normaliza a
     coluna para texto (efeito colateral necessário); quem exibe o aviso é o chamador.
@@ -48,6 +57,6 @@ def apacs_sem_numero(df: pd.DataFrame) -> List[int]:
     df["Numero_Apac"] = df["Numero_Apac"].where(df["Numero_Apac"].notna(), "").astype(str)
     return [
         pos
-        for pos, numero in enumerate(df["Numero_Apac"], start=2)
+        for pos, numero in zip(df.index + 2, df["Numero_Apac"])
         if not (d := re.sub(r"\D", "", numero)) or set(d) == {"0"}
     ]
